@@ -77,18 +77,18 @@ class RedisDb:
 
     def add_task_waiting_stop(self, task_instance_id, invoker_id):
         r = redis.Redis(connection_pool=self.pool)
-        r.sadd(WAITING_STOP_TASKS, json.dumps({"task_instance_id": task_instance_id, "invoker_id": invoker_id}))
+        r.hset(WAITING_STOP_TASKS, task_instance_id, invoker_id)
 
     def query_need_stop_tasks(self, invoker_id):
         r = redis.Redis(connection_pool=self.pool)
-        need_stop_tasks = r.smembers(WAITING_STOP_TASKS)
+        need_stop_tasks = r.hgetall(WAITING_STOP_TASKS)
         stop_instances = []
-        for task in need_stop_tasks:
-            dic1 = json.loads(task.decode());
-            if dic1['invoker_id'] == invoker_id:
-                stop_instances.append(['task_instance_id'])
+        for task in need_stop_tasks.keys():
+            if need_stop_tasks[task].decode() == invoker_id:
+                stop_instances.append(task)
+
         running_instances = r.smembers(INVOKER_INSTANCE_INDEX + invoker_id)
-        temps = list(set(stop_instances).intersection(running_instances))
+        temps = list(set(stop_instances).intersection(set(running_instances)))
         stop_tasks = []
         for temp in temps:
             stop_tasks.append(temp.decode())
@@ -142,7 +142,7 @@ class RedisDb:
         pipe.hset(TASK_INSTANCES, task_instance_id, task_instance.to_json_string())
         pipe.srem(INVOKER_INSTANCE_INDEX + invoker_id, task_instance_id)
         pipe.expire(INVOKER_INSTANCE_INDEX + invoker_id, live_seconds)
-        pipe.srem(WAITING_STOP_TASKS, json.dumps({"task_instance_id": task_instance_id, "invoker_id": invoker_id}))
+        pipe.hdel(WAITING_STOP_TASKS, task_instance_id)
         pipe.execute()
 
     def query_one_run_task(self, invoker_id, lock=True):
@@ -295,21 +295,25 @@ class RedisDb:
         for task_instance_id in task_instance_ids:
             status, task_instance = self.get_task_instance_status(task_instance_id)
             if status:
-                pipe.sadd(WAITING_STOP_TASKS,
-                          json.dumps({"task_instance_id": task_instance.id, "invoker_id": task_instance.invoker_id}))
-                pipe.execute()
+                pipe.hset(WAITING_STOP_TASKS,
+                          task_instance.id, task_instance.invoker_id)
+        pipe.execute()
 
     def start_task_param(self, task_param_id):
         # 没有调用者调用的任务，加入到待处理队列中
         r = redis.Redis(connection_pool=self.pool)
 
         # 取出待停止队列里有和task的instance，先处理掉
-        need_stop_instances = r.smembers(WAITING_STOP_TASKS)
+        need_stop_tasks = r.hgetall(WAITING_STOP_TASKS)
+        stop_instances = []
+        for task in need_stop_tasks.keys():
+            stop_instances.append(task)
+
         task_instance_ids = r.smembers(PARAM_INSTANCE_INDEX + task_param_id)
-        temps = list(need_stop_instances.intersection(task_instance_ids))
+        temps = list(stop_instances.intersection(task_instance_ids))
         pipe = r.pipeline()
         for temp in temps:
-            pipe.srem(WAITING_STOP_TASKS, temp)
+            pipe.hdel(WAITING_STOP_TASKS, temp)
         for task_instance_id in task_instance_ids:
             status, task_instance = self.get_task_instance_status(task_instance_id)
             if not status:
