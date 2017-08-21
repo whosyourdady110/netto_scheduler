@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{{static_url('css/main.css')}}" type="text/css"/>
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <script src="{{static_url('js/vue.js')}}"></script>
+    <script src="{{static_url('js/vue-resource.js')}}"></script>
+</head>
+<body>
+<nav class="navbar navbar-default navbar-inverse" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand">Netto Scheduler</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-left">
+                <li><a onclick="v.createTask()">新建任务</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown"><a class="dropdown-toggle a1"
+                                        data-toggle="dropdown" href="#"> 应用 <span class="caret"></span>
+                </a>
+                    <ul class="dropdown-menu">
+                        {% for env in environments %}
+                        <li><a href="ssafsfdf">{{env.env}}</a></li>
+                        {% end %}
+                    </ul>
+                </li>
+                <li><a class="a1" href="#">{{cur_env.env}}</a></li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle a1"
+                       data-toggle="dropdown" href="#"> admin <span
+                            class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="javascript:void(0);">修改密码</a></li>
+                        <li><a href="logout">退出</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div id="app">
+    <div class="modal-mask" v-if="showModal" @close="showModal = false">
+        <div class="modal-wrapper">
+            <div class="modal-container">
+
+                <div class="modal-header">
+                    新建修改调度任务
+                </div>
+
+                <div class="modal-body">
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <label for="inputApp" class="col-sm-2 control-label">应用</label>
+                            <div class="col-sm-4">
+                                <input class="form-control" id="inputApp" placeholder="服务的应用名称"
+                                       v-model="curTaskParam.app"/>
+                            </div>
+                            <label for="inputGroup" class="col-sm-2 control-label">分组</label>
+                            <div class="col-sm-4">
+                                <input class="form-control" id="inputGroup" placeholder="服务的应用分组"
+                                       v-model="curTaskParam.group"/>
+                            </div>
+                            <div class="col-sm-4">
+                                <input type="hidden" class="form-control" id="inputId" placeholder="id"
+                                       v-model="curTaskParam.id"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputCmd" class="col-sm-2 control-label">命令</label>
+                            <div class="col-sm-10">
+                                <input class="form-control" id="inputCmd" placeholder="调用服务命令"
+                                       v-model="curTaskParam.cmd"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-6 control-label">----------调用方参数-----------</label>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputInvokeCount" class="col-sm-2 control-label">调用方</label>
+                            <div class="col-sm-4">
+                                <input class="form-control" id="inputInvokeCount" placeholder="调用方的数量"
+                                       v-model="curTaskParam.params.invoke_args.invoke_count"/>
+                            </div>
+                            <label for="inputCronExpress" class="col-sm-2 control-label">cron_express</label>
+                            <div class="col-sm-4">
+                                <input class="form-control" id="inputCronExpress" placeholder="调度表达式"
+                                       v-model="curTaskParam.params.invoke_args.cron_express"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputSleepSeconds" class="col-sm-2 control-label">调用间隔</label>
+                            <div class="col-sm-4">
+                                <input class="form-control" id="inputSleepSeconds" placeholder="每次调用服务的间隔"
+                                       v-model="curTaskParam.params.invoke_args.sleep_seconds"/>
+                            </div>
+                            <label for="inputTimeoutSeconds" class="col-sm-2 control-label">超时秒数</label>
+                            <div class="col-sm-4">
+                                <input class="form-control" id="inputTimeoutSeconds" placeholder="服务超时秒数"
+                                       v-model="curTaskParam.params.invoke_args.timeout_seconds"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-6 control-label">----------服务方参数-----------</label>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputFectchCount" class="col-sm-2 control-label">每次取数</label>
+                            <div class="col-sm-2">
+                                <input class="form-control" id="inputFectchCount" placeholder="服务的每次取数数量"
+                                       v-model="curTaskParam.params.service_args.fetch_count"/>
+                            </div>
+                            <label for="inputRetryCount" class="col-sm-2 control-label">重试次数</label>
+                            <div class="col-sm-2">
+                                <input class="form-control" id="inputRetryCount" placeholder="错误数据的重试次数"
+                                       v-model="curTaskParam.params.service_args.data_retry_count"/>
+                            </div>
+                            <label for="inputRetrySeconds" class="col-sm-2 control-label">重试间隔</label>
+                            <div class="col-sm-2">
+                                <input class="form-control" id="inputRetrySeconds" placeholder="错误数据的重试间隔秒数"
+                                       v-model="curTaskParam.params.service_args.retry_after_seconds"/>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputExecuteCount" class="col-sm-2 control-label">每次执行</label>
+                            <div class="col-sm-4">
+                                <input class="form-control" id="inputExecuteCount" placeholder="每次执行数据数量"
+                                       v-model="curTaskParam.params.service_args.execute_count"/>
+                            </div>
+                            <label for="inputRetrySeconds" class="col-sm-2 control-label">线程数</label>
+                            <div class="col-sm-4">
+                                <input class="form-control" id="inputExecuteThreadCount" placeholder="服务执行的线程数量"
+                                       v-model="curTaskParam.params.service_args.execute_thread_count"/>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="inputSelfDefined" class="col-sm-2 control-label">自定义</label>
+                            <div class="col-sm-10">
+                                <textarea class="form-control" rows="3" id="inputSelfDefined" placeholder="服务的自定义参数"
+                                          v-model="curTaskParam.params.service_args.self_defined"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button @click="saveTask">保存</button>
+                    <button @click="showModal=false;">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <table class="table table-hover" style="table-layout:fixed;">
+        <thead>
+        <tr>
+            <th colspan="3" width="80px">操作</th>
+            <th width="120px">id</th>
+            <th width="100px">cmd</th>
+            <th width="180px">参数</th>
+            <th width="30px">任务数</th>
+            <th width="35px">调用时间</th>
+            <th width="35px">成功次数</th>
+            <th width="35px">失败次数</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="taskInfo in tasksInfo">
+            <td style="cursor:pointer" @click="updateTask(taskInfo.id)">编辑</td>
+            <td style="cursor:pointer" @click="stopTasks(taskInfo.id)">停止[[taskInfo.run_count]]</td>
+            <td style="cursor:pointer" @click="startTasks(taskInfo.id)">开启[[taskInfo.stop_count]]</td>
+            <td v-text="taskInfo.id"></td>
+            <td style="word-break:break-all" v-text="taskInfo.cmd"></td>
+            <td style="word-break:break-all" v-text="taskInfo.task_args"></td>
+            <td v-text="taskInfo.task_count"></td>
+            <td v-text="taskInfo.invoke_type"></td>
+            <td v-text="taskInfo.success_count"></td>
+            <td v-text="taskInfo.fail_count"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<script type="text/javascript">
+    // register modal component
+    Vue.component('modal', {
+        template: '#modal-template'
+    })
+    var v = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#app',
+        data: {
+            showModal: false,
+            curEnv: "{{cur_env.env}}",
+            curTaskParam: {},
+            tasksInfo: []
+        },
+        methods: {
+            loadTasks: function () {
+                var _self = this;
+                this.$http.get("/?a=tasks&env=" + this.curEnv
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            for (var i in res.body) {
+                                _self.tasksInfo.push(eval("(" + res.body[i] + ")"))
+                            }
+                        }
+                    }
+                )
+            },
+            createTask: function () {
+                var _self = this;
+                this.$http.post("/", {'a': 'ct', 'env': this.curEnv}
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            _self.showModal = true;
+                            _self.curTaskParam = res.body
+                        }
+                    }
+                )
+            },
+            updateTask: function (param_id) {
+                var _self = this;
+                this.$http.get("/?a=task&id=" + param_id
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            _self.showModal = true;
+                            _self.curTaskParam = res.body
+                        }
+                    }
+                )
+            },
+            stopTasks: function (param_id) {
+                var _self = this;
+                this.$http.post("/", {'a': 'stop', 'param_id': param_id}
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            alert(res.bodyText)
+                            _self.showModal = false
+                        }
+
+                    }
+                )
+            },
+            startTasks: function (param_id) {
+                var _self = this;
+                this.$http.post("/", {'a': 'start', 'param_id': param_id}
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            alert(res.bodyText)
+                            _self.showModal = false
+                        }
+
+                    }
+                )
+            },
+            saveTask: function () {
+                if (this.curTaskParam.cmd == "") {
+                    alert("cmd can't null");
+                    return;
+                }
+                var _self = this;
+                this.$http.post("/", {'a': 'sv', 'task': this.curTaskParam}
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            alert(res.bodyText)
+                            _self.showModal = false
+                        }
+
+                    }
+                )
+            }
+        }
+    })
+    window.onload = function () {
+        v.loadTasks();
+    }
+</script>
+</body>
+</html>
