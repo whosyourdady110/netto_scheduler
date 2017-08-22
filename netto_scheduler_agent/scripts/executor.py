@@ -22,7 +22,7 @@ class TaskExecutor:
     def execute(self):
         pass
 
-    def _save_invoke_logs(self):
+    def _invoke_heartbreak(self):
         self.db.save_task_logs(self.invoke_log_map)
 
 
@@ -58,12 +58,23 @@ class HttpExecutor(TaskExecutor):
                                        id=invoke_key,
                                        args=[invoker_number])
         # invoke_log_map up server
-        self.scheduler.add_job(self._save_invoke_logs, "interval", seconds=2)
+        self.scheduler.add_job(self._invoke_heartbreak, "interval", seconds=2)
         try:
             self.scheduler.start()
         except Exception as e:
             print(e)
             self.scheduler.shutdown(wait=True)
+
+    def _invoke_heartbreak(self):
+        if self.task_instance.status == 'off':
+            jobs = self.scheduler.get_jobs()
+            for job in jobs:
+                try:
+                    job.pause()
+                    job.remove()
+                except Exception as e:
+                    self.logger.error(e)
+        super()._invoke_heartbreak()
 
     def _job_listener(self, ev):
         """
@@ -71,6 +82,8 @@ class HttpExecutor(TaskExecutor):
         :param ev:
         :return:
         """
+        if self.task_instance.status == 'off':
+            return
         if ev.code == events.EVENT_JOB_ADDED:
             self.jobs[ev.job_id] = self.scheduler.get_job(ev.job_id)
         elif ev.code == events.EVENT_JOB_EXECUTED or ev.code == events.EVENT_JOB_ERROR:

@@ -122,6 +122,7 @@ class RedisDb:
         pipe = r.pipeline()
         pipe.hset(TASK_INSTANCES, task_instance_id, task_instance.to_json_string())
         pipe.sadd(INVOKER_INSTANCE_INDEX + invoker_id, task_instance_id)
+        pipe.srem(WAITING_RUN_TASKS, task_instance_id)
         if live_seconds > 0:
             pipe.expire(INVOKER_INSTANCE_INDEX + invoker_id, live_seconds)
 
@@ -370,6 +371,8 @@ class RedisDb:
         for task_instance in task_instances:
             pipe.sadd(PARAM_INSTANCE_INDEX + task_param.id, task_instance.id)
             pipe.hsetnx(TASK_INSTANCES, task_instance.id, task_instance.to_json_string())
+            if task_param.status == 'on':
+                pipe.sadd(WAITING_RUN_TASKS, task_instance.id)
 
         pipe.execute()
 

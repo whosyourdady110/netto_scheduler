@@ -133,6 +133,7 @@ class TaskInstance:
         md5.update(md5_str.encode("ascii"))
         self.id = md5.hexdigest()
         self.invoker_id = ''
+        self.status = "on"  # on run off stop
 
     def set_invoker_id(self, invoker_id):
         self.invoker_id = invoker_id
@@ -147,4 +148,6 @@ class TaskInstance:
         task_param_id = instance_dic['task_param_id']
         instance_obj = TaskInstance(task_name, task_param_id)
         instance_obj.__dict__ = instance_dic
+        if 'status' not in instance_dic.keys():
+            instance_obj.status = "on"
         return instance_obj

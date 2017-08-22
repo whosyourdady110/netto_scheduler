@@ -29,6 +29,7 @@ class Scheduler:
         }
         self.blockScheduler = BlockingScheduler()
         self.jobs = {}
+        self.run_task_count = 0
 
     @staticmethod
     def _get_invoker_id():
@@ -52,14 +53,14 @@ class Scheduler:
         # 先看看参数是否有变化的把调度重启或者关闭
         self.refresh_local_invoker()
         self.refresh_other_invokers()
-        if len(self.jobs) >= self.max_tasks:
+        if self.run_task_count >= self.max_tasks:
             return
 
         task_instances, task_params = self.db.query_waiting_run_tasks(self.invoker_id, self.max_tasks - len(self.jobs),
                                                                       True)
         if len(task_instances) == 0:
             return
-
+        self.run_task_count += len(task_instances)
         for i in range(len(task_instances)):
             task_instance = task_instances[i]
             task_param = task_params[i]
@@ -89,6 +90,9 @@ class Scheduler:
             if stop_task in self.jobs.keys():
                 try:
                     job = self.jobs[stop_task]
+                    task_instance = job.args[0]
+                    task_instance.status = 'off'
+                    self.run_task_count -= 1
                     job.pause()
                     job.remove()
                 except Exception as e:
@@ -117,6 +121,8 @@ class Scheduler:
                 break;
 
             try:
+                task_instance.status = 'off'
+                self.run_task_count -= 1
                 job.pause()
                 job.remove()
             except Exception as e:
