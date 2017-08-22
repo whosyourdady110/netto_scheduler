@@ -91,25 +91,33 @@ class HttpExecutor(TaskExecutor):
         log_key = 's:' + str(invoker_number)
         if log_key not in self.invoke_log_map[self.task_instance.id].keys():
             self.invoke_log_map[self.task_instance.id][log_key] = {'call_count': 0, 'success_count': 0,
-                                                                          'fail_count': 0}
+                                                                   'fail_count': 0}
 
         invoke_log = self.invoke_log_map[self.task_instance.id][log_key]
         try:
             invoke_log['call_count'] += 1
             self.logger.info("开始调用:%s", self.task_param.cmd)
             timeout = int(self.task_param.get_invoke_args()['timeout_seconds'])
-            req = {'methodName': 'execute', 'args': [{'invokerCount': self.task_param.get_invoke_args()['invoke_count'],
-                                                      'selfDefined': self.task_instance.task_name,
-                                                      'fetchCount': self.task_param.get_service_args()['fetch_count'],
-                                                      'executeCount': self.task_param.get_service_args()[
-                                                          'execute_count'],
-                                                      'executeThreadCount': self.task_param.get_service_args()[
-                                                          'execute_thread_count'],
-                                                      'dataRetryCount': self.task_param.get_service_args()[
-                                                          'data_retry_count'],
-                                                      'retryTimeInterval': self.task_param.get_service_args()[
-                                                          'retry_after_seconds']},
-                                                     invoker_number]}
+            pos = self.task_param.cmd.rfind('/')
+            if pos > 0:
+                l_pos = pos + 1
+                r_pos = len(self.task_param.cmd)
+                service_name = self.task_param.cmd[l_pos:r_pos]
+            else:
+                service_name = ""
+            req = {'serviceName': service_name, 'methodName': 'execute',
+                   'args': [{'invokerCount': self.task_param.get_invoke_args()['invoke_count'],
+                             'selfDefined': self.task_instance.task_name,
+                             'fetchCount': self.task_param.get_service_args()['fetch_count'],
+                             'executeCount': self.task_param.get_service_args()[
+                                 'execute_count'],
+                             'executeThreadCount': self.task_param.get_service_args()[
+                                 'execute_thread_count'],
+                             'dataRetryCount': self.task_param.get_service_args()[
+                                 'data_retry_count'],
+                             'retryTimeInterval': self.task_param.get_service_args()[
+                                 'retry_after_seconds']},
+                            invoker_number]}
 
             if timeout > 0:
                 response = self.http.request(method="POST", url=self.task_param.cmd,

@@ -135,9 +135,11 @@ class RedisDb:
         :return:
         '''
         r = redis.Redis(connection_pool=self.pool)
-        if r.hexists(TASK_INSTANCES, task_instance_id):
-            task_instance = TaskInstance.from_json_string(r.hget(TASK_INSTANCES, task_instance_id).decode())
-            task_instance.set_invoker_id("")
+        if not r.hexists(TASK_INSTANCES, task_instance_id):
+            return
+
+        task_instance = TaskInstance.from_json_string(r.hget(TASK_INSTANCES, task_instance_id).decode())
+        task_instance.set_invoker_id("")
         pipe = r.pipeline()
         pipe.hset(TASK_INSTANCES, task_instance_id, task_instance.to_json_string())
         pipe.srem(INVOKER_INSTANCE_INDEX + invoker_id, task_instance_id)
@@ -145,39 +147,51 @@ class RedisDb:
         pipe.hdel(WAITING_STOP_TASKS, task_instance_id)
         pipe.execute()
 
-    def query_one_run_task(self, invoker_id, lock=True):
+    def query_waiting_run_tasks(self, invoker_id, count=1, lock=True):
         """
         領取任務
         :return: task_instance
         """
         r = redis.Redis(connection_pool=self.pool)
-        task_instance_id = r.spop(WAITING_RUN_TASKS)
-        if task_instance_id is None:
-            task_instance_id = self._get_task_instance()
-            if task_instance_id is None:
-                return None, None
-        else:
-            task_instance_id = task_instance_id.decode()
+        task_instance_ids = r.srandmember(WAITING_RUN_TASKS, count)
+        if len(task_instance_ids) == 0:
+            return self._get_task_instances(invoker_id, count, lock)
 
-        if not r.hexists(TASK_INSTANCES, task_instance_id):
-            return None, None
-        task_instance = TaskInstance.from_json_string(r.hget(TASK_INSTANCES, task_instance_id).decode())
-        if lock:
-            self.lock_invoker_instance(invoker_id, task_instance_id)
-        task_param = self.query_task_param(task_instance.task_param_id)
-        return task_instance, task_param
+        task_instances = []
+        task_params = []
+        for b_str in task_instance_ids:
+            task_instance_id = b_str.decode()
+            if not r.hexists(TASK_INSTANCES, task_instance_id):
+                break
+            task_instance = TaskInstance.from_json_string(r.hget(TASK_INSTANCES, task_instance_id).decode())
+            if lock:
+                self.lock_invoker_instance(invoker_id, task_instance_id)
+            task_param = self.query_task_param(task_instance.task_param_id)
+            task_instances.append(task_instance)
+            task_params.append(task_param)
+        return task_instances, task_params
 
-    def _get_task_instance(self):
+    def _get_task_instances(self, invoker_id, count, lock):
         # 没有调用者调用的任务，加入到待处理队列中
         r = redis.Redis(connection_pool=self.pool)
         dic1 = r.hgetall(TASK_INSTANCES)
+        task_instances = []
+        task_params = []
+        i = 0
         for b_key in dic1.keys():
+            if i >= count:
+                return task_instances, task_params
             instance_id = b_key.decode()
             status, task_instance = self.get_task_instance_status(instance_id)
             if not status:
-                return instance_id
+                task_param = self.query_task_param(task_instance.task_param_id)
+                if task_param.status == 'on':
+                    task_instances.append(task_instance)
+                    task_params.append(task_param)
+                    if lock:
+                        self.lock_invoker_instance(invoker_id, instance_id)
 
-        return None
+        return task_instances, task_params
 
     def get_task_instance_status(self, task_instance_id):
         '''
@@ -289,6 +303,8 @@ class RedisDb:
         need_run_instances = r.smembers(WAITING_RUN_TASKS)
         task_instance_ids = r.smembers(PARAM_INSTANCE_INDEX + task_param_id)
         temps = list(need_run_instances.intersection(task_instance_ids))
+        task_param = self.query_task_param(task_param_id)
+
         pipe = r.pipeline()
         for temp in temps:
             pipe.srem(WAITING_RUN_TASKS, temp)
@@ -297,6 +313,9 @@ class RedisDb:
             if status:
                 pipe.hset(WAITING_STOP_TASKS,
                           task_instance.id, task_instance.invoker_id)
+
+        task_param.status = "off"
+        pipe.hset(TASK_PARAMS, task_param_id, task_param.to_json_string())
         pipe.execute()
 
     def start_task_param(self, task_param_id):
@@ -310,7 +329,8 @@ class RedisDb:
             stop_instances.append(task)
 
         task_instance_ids = r.smembers(PARAM_INSTANCE_INDEX + task_param_id)
-        temps = list(stop_instances.intersection(task_instance_ids))
+        temps = list(set(stop_instances).intersection(task_instance_ids))
+        task_param = self.query_task_param(task_param_id)
         pipe = r.pipeline()
         for temp in temps:
             pipe.hdel(WAITING_STOP_TASKS, temp)
@@ -318,6 +338,9 @@ class RedisDb:
             status, task_instance = self.get_task_instance_status(task_instance_id)
             if not status:
                 pipe.sadd(WAITING_RUN_TASKS, task_instance.id)
+
+        task_param.status = "on"
+        pipe.hset(TASK_PARAMS, task_param_id, task_param.to_json_string())
         pipe.execute()
 
     def save_task_param(self, task_param):

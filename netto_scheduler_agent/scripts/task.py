@@ -18,6 +18,7 @@ class TaskParam:
         self.app = app
         self.group = group
         self.params = params
+        self.status = "on"  # on run off stop
         md5 = hashlib.md5()
         md5_str = ''.join(cmd.split())
         md5_str += ''.join(app.split())
@@ -82,6 +83,10 @@ class TaskParam:
     def has_diff(self, task_param):
         if task_param is None:
             return True
+        if self.cmd != task_param.cmd:
+            return True
+        if self.env != task_param.env:
+            return True
         invoke_param1 = self.get_invoke_args()
         invoke_param2 = task_param.get_invoke_args()
         if invoke_param1['invoke_count'] != invoke_param1['invoke_count']:
@@ -113,6 +118,8 @@ class TaskParam:
         param_dic = json.loads(json_string)
         param_obj = TaskParam(param_dic['app'], param_dic['cmd'], param_dic, param_dic['group'])
         param_obj.__dict__ = param_dic
+        if 'status' not in param_dic.keys():
+            param_obj.status = "on"
         return param_obj
 
 
