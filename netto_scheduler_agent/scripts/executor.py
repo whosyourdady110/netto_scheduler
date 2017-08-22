@@ -22,7 +22,7 @@ class TaskExecutor:
     def execute(self):
         pass
 
-    def _invoke_heartbreak(self):
+    def _invoke_break_heart(self):
         self.db.save_task_logs(self.invoke_log_map)
 
 
@@ -58,14 +58,14 @@ class HttpExecutor(TaskExecutor):
                                        id=invoke_key,
                                        args=[invoker_number])
         # invoke_log_map up server
-        self.scheduler.add_job(self._invoke_heartbreak, "interval", seconds=2)
+        self.scheduler.add_job(self._invoke_break_heart, "interval", seconds=2)
         try:
             self.scheduler.start()
         except Exception as e:
             print(e)
             self.scheduler.shutdown(wait=True)
 
-    def _invoke_heartbreak(self):
+    def _invoke_break_heart(self):
         if self.task_instance.status == 'off':
             jobs = self.scheduler.get_jobs()
             for job in jobs:
@@ -74,7 +74,7 @@ class HttpExecutor(TaskExecutor):
                     job.remove()
                 except Exception as e:
                     self.logger.error(e)
-        super()._invoke_heartbreak()
+        super()._invoke_break_heart()
 
     def _job_listener(self, ev):
         """

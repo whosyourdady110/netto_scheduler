@@ -4,7 +4,7 @@ import logging
 import logging.config
 import copy
 import apscheduler.events as events
-import socket, os
+import socket, os, threading
 
 from apscheduler.schedulers.background import BlockingScheduler
 from netto_scheduler.netto_scheduler_agent.scripts.db import RedisDb
@@ -29,7 +29,7 @@ class Scheduler:
         }
         self.blockScheduler = BlockingScheduler()
         self.jobs = {}
-        self.run_task_count = 0
+        self.lock = threading.Lock()
 
     @staticmethod
     def _get_invoker_id():
@@ -51,29 +51,33 @@ class Scheduler:
         :return:
         """
         # 先看看参数是否有变化的把调度重启或者关闭
-        self.refresh_local_invoker()
-        self.refresh_other_invokers()
-        if self.run_task_count >= self.max_tasks:
-            return
+        try:
+            self.lock.acquire()
+            self.refresh_local_invoker()
+            self.refresh_other_invokers()
+            if len(self.jobs) >= self.max_tasks:
+                return
 
-        task_instances, task_params = self.db.query_waiting_run_tasks(self.invoker_id, self.max_tasks - len(self.jobs),
-                                                                      True)
-        if len(task_instances) == 0:
-            return
-        self.run_task_count += len(task_instances)
-        for i in range(len(task_instances)):
-            task_instance = task_instances[i]
-            task_param = task_params[i]
-            if task_instance.id not in self.jobs.keys():
-                self.logger.info("分配了新任务%s", task_instance.id)
-                job = self.blockScheduler.add_job(self.task_invoke,
-                                                  next_run_time=(
-                                                      datetime.datetime.now() + datetime.timedelta(seconds=2)),
-                                                  args=[task_instance, task_param], id=task_instance.id)
-                self.jobs[job.id] = job
-                self.db.lock_invoker_instance(self.invoker_id, task_instance.id, self.live_seconds)
-            else:
-                self.logger.error("%s任务已经在运行", task_instance.id)
+            task_instances, task_params = self.db.query_waiting_run_tasks(self.invoker_id,
+                                                                          self.max_tasks - len(self.jobs),
+                                                                          True)
+            if len(task_instances) == 0:
+                return
+            for i in range(len(task_instances)):
+                task_instance = task_instances[i]
+                task_param = task_params[i]
+                if task_instance.id not in self.jobs.keys():
+                    self.logger.info("分配了新任务%s", task_instance.id)
+                    job = self.blockScheduler.add_job(self.task_invoke,
+                                                      next_run_time=(
+                                                          datetime.datetime.now() + datetime.timedelta(seconds=2)),
+                                                      args=[task_instance, task_param], id=task_instance.id)
+                    self.jobs[job.id] = job
+                    self.db.lock_invoker_instance(self.invoker_id, task_instance.id, self.live_seconds)
+                else:
+                    self.logger.error("%s任务已经在运行", task_instance.id)
+        finally:
+            self.lock.release()
 
     def refresh_local_invoker(self):
         """
@@ -92,7 +96,6 @@ class Scheduler:
                     job = self.jobs[stop_task]
                     task_instance = job.args[0]
                     task_instance.status = 'off'
-                    self.run_task_count -= 1
                     job.pause()
                     job.remove()
                 except Exception as e:
@@ -122,7 +125,6 @@ class Scheduler:
 
             try:
                 task_instance.status = 'off'
-                self.run_task_count -= 1
                 job.pause()
                 job.remove()
             except Exception as e:
