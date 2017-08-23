@@ -1,6 +1,6 @@
 import tornado.web
 import configparser
-from netto_scheduler.netto_scheduler_agent.scripts.db import RedisDb
+from netto_scheduler_agent.scripts.db import RedisDb
 
 
 class AppHandler(tornado.web.RequestHandler):
