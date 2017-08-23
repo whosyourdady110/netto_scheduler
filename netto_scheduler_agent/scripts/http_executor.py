@@ -1,9 +1,8 @@
 import urllib3
-import time, datetime
+import time
+import datetime
 import json
-import apscheduler.events as events
 
-from apscheduler.schedulers.background import BlockingScheduler
 from netto_scheduler.netto_scheduler_agent.scripts.executor import TaskExecutor
 
 
@@ -11,19 +10,10 @@ class HttpExecutor(TaskExecutor):
     def __init__(self, db, task_instance, task_param):
         super().__init__(task_instance, task_param)
         self.http = urllib3.PoolManager(retries=False)
-        self.db = db
-        invoke_count = int(self.task_param.get_invoke_args()['invoke_count'])
-        executors = {
-            'default': {'type': 'threadpool', 'max_workers': invoke_count + 1}
-        }
-        self.scheduler = BlockingScheduler(executors=executors)
 
     def execute(self):
         invoke_args = self.task_param.get_invoke_args()
         invoke_count = int(invoke_args['invoke_count'])
-        service_args = self.task_param.get_service_args()
-        self.scheduler.add_listener(self._job_listener,
-                                    events.EVENT_JOB_EXECUTED | events.EVENT_JOB_ERROR | events.EVENT_JOB_ADDED | events.EVENT_JOB_MISSED)
         for invoker_number in range(invoke_count):
             if invoke_args['cron_express'] != "":
                 # minute hour day month dayofweek
@@ -38,46 +28,7 @@ class HttpExecutor(TaskExecutor):
                                        next_run_time=(datetime.datetime.now() + datetime.timedelta(seconds=2)),
                                        id=invoke_key,
                                        args=[invoker_number])
-        # invoke_log_map up server
-        self.scheduler.add_job(self._invoke_break_heart, "interval", seconds=2)
-        try:
-            self.scheduler.start()
-        except Exception as e:
-            print(e)
-            self.scheduler.shutdown(wait=True)
-
-    def _invoke_break_heart(self):
-        if self.task_instance.status == 'off':
-            jobs = self.scheduler.get_jobs()
-            for job in jobs:
-                try:
-                    job.pause()
-                    job.remove()
-                except Exception as e:
-                    self.logger.error(e)
-        super()._invoke_break_heart()
-
-    def _job_listener(self, ev):
-        """
-        监听job的事件，job完成后再发起下次调用，对于异常也要处理
-        :param ev:
-        :return:
-        """
-        if self.task_instance.status == 'off':
-            return
-        if ev.code == events.EVENT_JOB_ADDED:
-            self.jobs[ev.job_id] = self.scheduler.get_job(ev.job_id)
-        elif ev.code == events.EVENT_JOB_EXECUTED or ev.code == events.EVENT_JOB_ERROR:
-            if ev.code == events.EVENT_JOB_ERROR:
-                self.logger.error(ev.exception)
-                self.logger.error(ev.traceback)
-            job = self.jobs[ev.job_id]
-            self.scheduler.add_job(job.func,
-                                   next_run_time=(
-                                       datetime.datetime.now() + datetime.timedelta(seconds=1)),
-                                   id=ev.job_id, args=job.args)
-        else:
-            pass
+        super().execute()
 
     def _invoke_service(self, invoker_number):
         if self.task_instance.id not in self.invoke_log_map.keys():
