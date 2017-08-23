@@ -7,7 +7,7 @@ import apscheduler.events as events
 import socket, os, threading
 
 from apscheduler.schedulers.background import BlockingScheduler
-from netto_scheduler_agent.scripts.db import RedisDb
+from netto_scheduler_agent.scripts.db import SchedulerDb
 from netto_scheduler_agent.scripts.http_executor import HttpExecutor
 
 
@@ -21,7 +21,7 @@ class Scheduler:
         self.invoker_id = self._get_invoker_id()
         self.max_tasks = conf.getint("invoker", "max_tasks")
         self.live_seconds = conf.getint("invoker", "live_seconds")
-        self.db = RedisDb(ip, port, timeout)
+        self.db = SchedulerDb(ip, port, timeout)
         logging.config.fileConfig("../logger.ini")
         self.logger = logging.getLogger("main")
         executors = {

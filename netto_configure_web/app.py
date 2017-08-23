@@ -1,6 +1,6 @@
 import tornado.web
 import configparser
-from netto_scheduler_agent.scripts.db import RedisDb
+from netto_scheduler_agent.scripts.db import SchedulerDb
 from netto_scheduler_agent.scripts.task import TaskEnvironment
 
 
@@ -12,7 +12,7 @@ class AppHandler(tornado.web.RequestHandler):
         ip = conf.get("redis", "ip")
         port = conf.getint("redis", "port")
         timeout = conf.getint("redis", "timeout")
-        self.db = RedisDb(ip, port, timeout)
+        self.db = SchedulerDb(ip, port, timeout)
 
     def get(self, *args, **kwargs):
         title = "netto configure web"

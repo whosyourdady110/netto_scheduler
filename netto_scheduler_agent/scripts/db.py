@@ -20,7 +20,7 @@ INVOKER_INSTANCE_INDEX = "invoker_instance_index:"
 INVOKER_LOGS_INDEX = "invoker_logs:"
 
 
-class RedisDb:
+class SchedulerDb:
     """
     redis db create delete update query
     """
