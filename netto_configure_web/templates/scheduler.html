@@ -19,11 +19,18 @@
 <nav class="navbar navbar-default navbar-inverse" role="navigation">
     <div class="container">
         <div class="navbar-header">
-            <a class="navbar-brand">Netto Scheduler</a>
+            <a class="navbar-brand">Netto Configure Web</a>
         </div>
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav navbar-left">
-                <li><a onclick="v.createTask()">新建任务</a></li>
+                <li class="dropdown active"><a class="dropdown-toggle a1"
+                                               data-toggle="dropdown" href="scheduler"> 调度中心 <span class="caret"></span>
+                </a>
+                    <ul class="dropdown-menu">
+                        <li><a onclick="v.createTask()">新建任务</a></li>
+                    </ul>
+                </li>
+                <li><a href="app">应用中心</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li class="dropdown"><a class="dropdown-toggle a1"
@@ -208,7 +215,7 @@
         methods: {
             loadTasks: function () {
                 var _self = this;
-                this.$http.get("/?a=tasks&env=" + this.curEnv
+                this.$http.get("/scheduler?a=tasks&env=" + this.curEnv
                 ).then(function (res) {
                         if (res.status == 200) {
                             for (var i in res.body) {
@@ -220,7 +227,7 @@
             },
             createTask: function () {
                 var _self = this;
-                this.$http.post("/", {'a': 'ct', 'env': this.curEnv}
+                this.$http.post("/scheduler", {'a': 'ct', 'env': this.curEnv}
                 ).then(function (res) {
                         if (res.status == 200) {
                             _self.showModal = true;
@@ -231,7 +238,7 @@
             },
             updateTask: function (param_id) {
                 var _self = this;
-                this.$http.get("/?a=task&id=" + param_id
+                this.$http.get("/scheduler?a=task&id=" + param_id
                 ).then(function (res) {
                         if (res.status == 200) {
                             _self.showModal = true;
@@ -242,7 +249,7 @@
             },
             stopTasks: function (param_id) {
                 var _self = this;
-                this.$http.post("/", {'a': 'stop', 'param_id': param_id}
+                this.$http.post("/scheduler", {'a': 'stop', 'param_id': param_id}
                 ).then(function (res) {
                         if (res.status == 200) {
                             alert(res.bodyText)
@@ -254,7 +261,7 @@
             },
             startTasks: function (param_id) {
                 var _self = this;
-                this.$http.post("/", {'a': 'start', 'param_id': param_id}
+                this.$http.post("/scheduler", {'a': 'start', 'param_id': param_id}
                 ).then(function (res) {
                         if (res.status == 200) {
                             alert(res.bodyText)
@@ -270,7 +277,7 @@
                     return;
                 }
                 var _self = this;
-                this.$http.post("/", {'a': 'sv', 'task': this.curTaskParam}
+                this.$http.post("/scheduler", {'a': 'sv', 'task': this.curTaskParam}
                 ).then(function (res) {
                         if (res.status == 200) {
                             alert(res.bodyText)

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{{static_url('css/main.css')}}" type="text/css"/>
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <script src="{{static_url('js/vue.js')}}"></script>
+    <script src="{{static_url('js/vue-resource.js')}}"></script>
+</head>
+<body>
+<nav class="navbar navbar-default navbar-inverse" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand">Netto Configure Web</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-left">
+                <li><a href="scheduler">调度中心</a></li>
+                <li class="active"><a href="app">应用中心</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown"><a class="dropdown-toggle a1"
+                                        data-toggle="dropdown" href="#"> 应用 <span class="caret"></span>
+                </a>
+                    <ul class="dropdown-menu">
+                        {% for env in environments %}
+                        <li><a href="ssafsfdf">{{env.env}}</a></li>
+                        {% end %}
+                    </ul>
+                </li>
+                <li><a class="a1" href="#">{{cur_env.env}}</a></li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle a1"
+                       data-toggle="dropdown" href="#"> admin <span
+                            class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="javascript:void(0);">修改密码</a></li>
+                        <li><a href="logout">退出</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+</body>
+</html>
