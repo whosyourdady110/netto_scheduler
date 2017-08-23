@@ -37,7 +37,7 @@ class MainHandler(tornado.web.RequestHandler):
             else:
                 pass
         else:
-            title = "netto scheduler web"
+            title = "netto configure web"
             environments = self.db.query_all_environments()
             cur_env = environments[0]
             self.render("main.html", title=title, environments=environments, cur_env=cur_env)
