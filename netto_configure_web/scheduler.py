@@ -4,6 +4,7 @@ import tornado.web
 import configparser
 from netto_scheduler_agent.scripts.db import RedisDb
 from netto_scheduler_agent.scripts.task import TaskParam
+from netto_scheduler_agent.scripts.task import TaskEnvironment
 
 
 class SchedulerHandler(tornado.web.RequestHandler):
@@ -36,7 +37,10 @@ class SchedulerHandler(tornado.web.RequestHandler):
         else:
             title = "netto configure web"
             environments = self.db.query_all_environments()
-            cur_env = environments[0]
+            if len(environments) > 0:
+                cur_env = environments[0]
+            else:
+                cur_env = TaskEnvironment("netto", [])
             self.render("scheduler.html", title=title, environments=environments, cur_env=cur_env)
 
     def post(self):
