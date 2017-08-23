@@ -7,7 +7,7 @@ import apscheduler.events as events
 import socket, os, threading
 
 from apscheduler.schedulers.background import BlockingScheduler
-from netto_scheduler_agent.scripts.db import SchedulerDb
+from netto_scheduler_agent.scripts.schedule_db import SchedulerDb
 from netto_scheduler_agent.scripts.http_executor import HttpExecutor
 
 

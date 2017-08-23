@@ -1,6 +1,6 @@
 import tornado.web
 import configparser
-from netto_scheduler_agent.scripts.db import SchedulerDb
+from netto_scheduler_agent.scripts.schedule_db import SchedulerDb
 from netto_scheduler_agent.scripts.task import TaskEnvironment
 
 

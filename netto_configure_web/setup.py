@@ -13,6 +13,7 @@ setup(
     packages=["scripts"],
     # 需要安装的依赖
     install_requires=[
-        'redis>=2.10.5'
+        'redis>=2.10.5',
+        'pymysql'
     ]
 )
