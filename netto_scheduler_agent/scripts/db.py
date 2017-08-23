@@ -1,9 +1,9 @@
 import redis
 import json
 import time
-from netto_scheduler.netto_scheduler_agent.scripts.task import TaskInstance
-from netto_scheduler.netto_scheduler_agent.scripts.task import TaskParam
-from netto_scheduler.netto_scheduler_agent.scripts.task import TaskEnvironment
+from netto_scheduler_agent.scripts.task import TaskInstance
+from netto_scheduler_agent.scripts.task import TaskParam
+from netto_scheduler_agent.scripts.task import TaskEnvironment
 
 ###reids tables
 TASK_INVOKERS = "task_invokers"

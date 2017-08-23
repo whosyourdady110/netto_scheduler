@@ -3,7 +3,7 @@ import time
 import datetime
 import json
 
-from netto_scheduler.netto_scheduler_agent.scripts.executor import TaskExecutor
+from netto_scheduler_agent.scripts.executor import TaskExecutor
 
 
 class HttpExecutor(TaskExecutor):

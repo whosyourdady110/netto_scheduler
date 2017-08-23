@@ -4,11 +4,11 @@
 from setuptools import setup
 
 setup(
-    name="netto_scheduler_web",
+    name="netto_configure_web",
     version="1.0",
     author="sylink",
     author_email="sylink@163.com",
-    description=("netto scheduler web"),
+    description=("netto configure web"),
     license="GPLv3",
     packages=["scripts"],
     # 需要安装的依赖

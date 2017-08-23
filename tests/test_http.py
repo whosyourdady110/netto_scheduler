@@ -1,7 +1,7 @@
 import unittest
 
-from netto_scheduler.netto_scheduler_agent.scripts.executor import HttpExecutor
-from netto_scheduler.netto_scheduler_agent.scripts.task import TaskParam
+from netto_scheduler_agent.scripts.http_executor import HttpExecutor
+from netto_scheduler_agent.scripts.task import TaskParam
 
 
 class TestHttp(unittest.TestCase):

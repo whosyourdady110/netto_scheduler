@@ -1,6 +1,6 @@
 import time
 import datetime
-from netto_scheduler.netto_scheduler_agent.scripts.executor import TaskExecutor
+from netto_scheduler_agent.scripts.executor import TaskExecutor
 
 
 class ScriptExecutor(TaskExecutor):
@@ -42,7 +42,7 @@ class ScriptExecutor(TaskExecutor):
         try:
             invoke_log['call_count'] += 1
             self.logger.info("开始调用:%s", self.task_param.cmd)
-            
+
             self.logger.info("调用:%s成功!", self.task_param.cmd)
             invoke_log['success_count'] += 1
         except Exception as e:

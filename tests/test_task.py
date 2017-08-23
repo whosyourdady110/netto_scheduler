@@ -1,7 +1,7 @@
 import unittest
 
-from task_scheduler.task_scheduler_agent.scripts.task import TaskParam
-from task_scheduler.task_scheduler_agent.scripts.task import TaskInstance
+from netto_scheduler_agent.scripts.task import TaskParam
+from netto_scheduler_agent.scripts.task import TaskInstance
 
 
 class TestTask(unittest.TestCase):

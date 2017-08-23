@@ -7,8 +7,8 @@ import apscheduler.events as events
 import socket, os, threading
 
 from apscheduler.schedulers.background import BlockingScheduler
-from netto_scheduler.netto_scheduler_agent.scripts.db import RedisDb
-from netto_scheduler.netto_scheduler_agent.scripts.http_executor import HttpExecutor
+from netto_scheduler_agent.scripts.db import RedisDb
+from netto_scheduler_agent.scripts.http_executor import HttpExecutor
 
 
 class Scheduler:

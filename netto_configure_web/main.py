@@ -4,8 +4,8 @@ import tornado.httpserver
 import os
 import configparser
 
-from netto_scheduler.netto_configure_web.scheduler import SchedulerHandler
-from netto_scheduler.netto_configure_web.app import AppHandler
+from netto_configure_web.scheduler import SchedulerHandler
+from netto_configure_web.app import AppHandler
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
                 'static_path': os.path.join(os.path.dirname(__file__), 'static'),
                 'static_url_prefix': '/static/'}
     application = tornado.web.Application([
-        (r'/', SchedulerHandler),(r'/scheduler', SchedulerHandler), (r'/app', AppHandler)
+        (r'/', SchedulerHandler), (r'/scheduler', SchedulerHandler), (r'/app', AppHandler)
     ], **settings)
     http_server = tornado.httpserver.HTTPServer(application)
     http_server.listen(conf.get("web", "port"))
