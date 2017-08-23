@@ -8,7 +8,7 @@ from netto_scheduler.netto_scheduler_agent.scripts.executor import TaskExecutor
 
 class HttpExecutor(TaskExecutor):
     def __init__(self, db, task_instance, task_param):
-        super().__init__(task_instance, task_param)
+        super().__init__(db, task_instance, task_param)
         self.http = urllib3.PoolManager(retries=False)
 
     def execute(self):
@@ -50,6 +50,7 @@ class HttpExecutor(TaskExecutor):
                 service_name = self.task_param.cmd[l_pos:r_pos]
             else:
                 service_name = ""
+            url = self.task_param.cmd[1:pos]
             req = {'serviceName': service_name, 'methodName': 'execute',
                    'args': [{'invokerCount': self.task_param.get_invoke_args()['invoke_count'],
                              'selfDefined': self.task_instance.task_name,
@@ -63,16 +64,17 @@ class HttpExecutor(TaskExecutor):
                              'retryTimeInterval': self.task_param.get_service_args()[
                                  'retry_after_seconds']},
                             invoker_number]}
+            headers = {'Content-Type': 'application/json', '$app': self.task_param.app, '$group': self.task_param.group}
 
             if timeout > 0:
-                response = self.http.request(method="POST", url=self.task_param.cmd,
-                                             headers={'Content-Type': 'application/json'},
+                response = self.http.request(method="POST", url=url,
+                                             headers=headers,
                                              body=json.dumps(req),
                                              timeout=urllib3.Timeout(connect=timeout,
                                                                      read=timeout))
             else:
-                response = self.http.request(method="POST", url=self.task_param.cmd,
-                                             headers={'Content-Type': 'application/json'},
+                response = self.http.request(method="POST", url=url,
+                                             headers=headers,
                                              body=json.dumps(req))
             if response.status != 200:
                 self.logger.info("调用:%s失败!", self.task_param.cmd)
