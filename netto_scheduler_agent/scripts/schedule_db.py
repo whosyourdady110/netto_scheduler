@@ -11,7 +11,6 @@ TASK_PARAMS = "task_params"
 WAITING_RUN_TASKS = "waiting_run_tasks"
 WAITING_STOP_TASKS = "waiting_stop_tasks"
 TASK_INSTANCES = "task_instances"
-TASK_ENVIRONMENTS = "task_environments"
 
 ### redis indexes
 ENV_PARAM_INDEX = "env_param_index:"
@@ -224,18 +223,6 @@ class SchedulerDb:
         for b_key in dic1.keys():
             dic2[b_key.decode()] = dic1[b_key].decode()
         return dic2
-
-    def query_all_environments(self):
-        r = redis.Redis(connection_pool=self.pool)
-        dict1 = r.hgetall(TASK_ENVIRONMENTS)
-        environments = []
-        for key in dict1.keys():
-            dict2 = json.loads(dict1[key].decode())
-            owners = dict2['owners']
-            group = dict2['group']
-            app = dict2['app']
-            environments.append(TaskEnvironment(app, owners, group))
-        return environments
 
     def query_tasks_info(self, env):
         '''
