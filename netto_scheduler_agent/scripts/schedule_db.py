@@ -25,8 +25,8 @@ class SchedulerDb:
     redis db create delete update query
     """
 
-    def __init__(self, ip, port, timeout):
-        self.pool = redis.ConnectionPool(host=ip, port=port, socket_timeout=timeout)
+    def __init__(self, host, port, timeout):
+        self.pool = redis.ConnectionPool(host=host, port=port, socket_timeout=timeout)
 
     def register_invoker(self, invoker_id, max_tasks, live_seconds):
         r = redis.Redis(connection_pool=self.pool)
