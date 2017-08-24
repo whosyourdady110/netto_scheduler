@@ -162,7 +162,7 @@ class SchedulerDb:
         for b_str in task_instance_ids:
             task_instance_id = b_str.decode()
             if not r.hexists(TASK_INSTANCES, task_instance_id):
-                break
+                continue
             task_instance = TaskInstance.from_json_string(r.hget(TASK_INSTANCES, task_instance_id).decode())
             if lock:
                 self.lock_invoker_instance(invoker_id, task_instance_id)
@@ -343,7 +343,7 @@ class SchedulerDb:
         for b_str in instance_ids:
             instance_id = b_str.decode()
             if not r.hexists(TASK_INSTANCES, instance_id):
-                break
+                continue
             status, task_instance = self.get_task_instance_status(instance_id)
             if status:
                 self.add_task_waiting_stop(instance_id, task_instance.invoker_id)
