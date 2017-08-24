@@ -113,7 +113,7 @@ class Scheduler:
         c_jobs = copy.copy(self.jobs)
         for key in c_jobs.keys():
             if key not in self.jobs.keys():
-                break
+                continue
             job = self.jobs[key]
             task_instance = job.args[0]
             old_task_param = job.args[1]
@@ -121,7 +121,7 @@ class Scheduler:
             new_task_param = self.db.query_task_param(task_instance.task_param_id)
             # if new_task_param
             if not new_task_param.has_diff(old_task_param):
-                break;
+                continue
 
             try:
                 task_instance.status = 'off'
