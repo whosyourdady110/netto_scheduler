@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{{static_url('css/main.css')}}" type="text/css"/>
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <script src="{{static_url('js/vue.js')}}"></script>
+    <script src="{{static_url('js/vue-resource.js')}}"></script>
+    <style>
+    .app-panel-footer {
+            padding: 5px 5px;
+            margin: 5px 10px;
+            border-top: 1px solid #ddd;
+                text-align: right;
+    }
+
+    .app-pre{
+    font-size: 90%;color: #c7254e;background:transparent ;border: 0px;padding:2px 0px;
+    }
+
+    .app-panel-heading {
+    padding: 10px 15px;
+    }
+    .add_group{
+        cursor:pointer;
+    }
+    .tab-pane{
+    padding:10px;
+    }
+
+    .serverGroup-footer{
+        padding: 15px;
+        text-align: right;
+        <!--border-top: 1px solid #e5e5e5;-->
+    }
+
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-default navbar-inverse" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand">Netto Configure Web</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-left">
+                <li><a href="scheduler">调度中心</a></li>
+                <li class="dropdown active"><a class=" a1"
+                                               href="/app/index"> 应用中心 <span class="caret"></span>
+                </a>
+
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a class="dropdown-toggle a1"
+                       data-toggle="dropdown" href="#"> 应用 <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        {% for env in environments %}
+                        <li><a href="ssafsfdf">{{env.env}}</a></li>
+                        {% end %}
+                    </ul>
+                </li>
+                <li><a class="a1" href="#">{{cur_env.env}}</a></li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle a1"
+                       data-toggle="dropdown" href="#"> admin <span
+                            class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="javascript:void(0);">修改密码</a></li>
+                        <li><a href="logout">退出</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container" id="app">
+
+   <div class="modal-mask" v-if="showModifyModal" @close="showModifyModal = false">
+        <div class="modal-wrapper">
+            <div class="modal-container">
+
+                <div class="modal-header">
+                    <h2>修改服务组[[serverGroup.group_name]]</h2>
+                </div>
+
+                <div class="modal-body">
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">路由标识</label>
+                            <div class="col-sm-10">
+                                <input class="form-control" id="routerKeys" placeholder="英文字母/下划线，用逗号隔开"
+                                       v-model="serverGroup.router_keys"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">默认服务器列表</label>
+                            <div class="col-sm-10">
+                                <textarea class="form-control" id="defaultServers" rows="10"
+                                          v-model="serverGroup.server_strs"
+                                          placeholder="例: 192.168.2.251:8080 weight=1; 多行表示多个服务器" type="text"
+                                          name="defaultServers"></textarea>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button @click="saveServerGroup(appParameters.appName)" class="btn btn-primary">保存</button>
+                    <button class="btn btn-primary" @click="showModifyModal=false;">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-mask" v-if="showCreateModal" @close="showCreateModal = false">
+        <div class="modal-wrapper">
+            <div class="modal-container">
+
+
+
+                <div class="modal-body">
+                    <form class="form-horizontal">
+                     <div class="form-group">
+                            <label class="col-sm-2 control-label">组名</label>
+                            <div class="col-sm-10">
+                                <input class="form-control" placeholder=""
+                                       v-model="serverGroup.group_name"/>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">路由标识</label>
+                            <div class="col-sm-10">
+                                <input class="form-control"  placeholder="英文字母/下划线，用逗号隔开"
+                                       v-model="serverGroup.router_keys"/>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">服务器列表</label>
+                            <div class="col-sm-10">
+                                <textarea class="form-control"  rows="10"
+                                          v-model="serverGroup.server_strs"
+                                          placeholder="例: 192.168.2.251:8080 weight=1; 多行表示多个服务器" type="text"
+                                          name="defaultServers"></textarea>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button @click="saveServerGroup(appParameters.appName)" class="btn btn-primary">保存</button>
+                    <button class="btn btn-primary" @click="showCreateModal=false;">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!--<div class="panel ">-->
+    <!--<div class="panel-heading"><h2>{{cur_app}}</h2></div>-->
+    <!--<div class="panel-body">-->
+
+    <!--</div>-->
+    <!--</div>-->
+
+    <!--<div>-->
+    <div class="panel panel-default">
+        <div class="app-panel-heading "><h3>[[appParameters.appName]] <span class="add_group badge"   @click="createServerGroup(appParameters.appName)">+</span></h3></div>
+
+        <div class="panel-body">
+            <ul class="nav nav-tabs" role="tablist">
+                <template v-for="(serverGroup, index) in serverGroups">
+                    <li role="presentation" v-bind:class="serverGroup.tab_class">
+                        <a v-bind:href="serverGroup.href" aria-controls="home" role="tab" data-toggle="tab">
+                            <span>
+                            服务器组:[[serverGroup.group_name]]
+                            </span>
+                        </a>
+                    </li>
+                </template>
+            </ul>
+
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <template v-for="(serverGroup, index) in serverGroups">
+                    <div role="tabpanel" v-bind:class="serverGroup.tabpanel_class" v-bind:id="serverGroup.id">
+                        <div class="panel">
+                            <div class="panel-body">
+                                <h4>服务器列表</h4>
+                                <p>
+                                <pre class="app-pre">[[serverGroup.server_strs]]</pre>
+                                </p>
+                                <h4>路由标识</h4>
+                                <p>[[serverGroup.router_keys]]</p>
+                            </div>
+                            <div class="serverGroup-footer">
+                                <button class="btn btn-primary"  @click="removeServerGroup(appParameters.appName,serverGroup.group_name)">删除</button>
+                                <button class="btn btn-primary"  @click="modifyServerGroup(appParameters.appName,serverGroup.group_name)">修改</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </template>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+</div>
+<script type="text/javascript">
+    Vue.component('modal', {
+        template: '#modal-template'
+    })
+
+    var v = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#app',
+        data: {
+            showModifyModal: false,
+            showCreateModal: false,
+            appParameters:{
+                appProtocol:"tcp"
+            },
+            serverGroups:[],
+            serverGroup:{}
+        },
+        methods: {
+
+            loadApp:function(appName){
+                var _self = this;
+                this.$http.get("/app/app_detail?app_name=" + appName
+                ).then(function (res) {
+                        if (res.status == 200 && res.body.ret==200) {
+                            _self.appParameters = res.body.app
+                        }
+                    }
+                )
+            },
+            saveServerGroup:function(appName){
+                 this.$http.post("/app/saveServerGroup", {'serverGroup': this.serverGroup,"appName":appName}).then(
+                    function (res) {
+                        if (res.status == 200 && res.body.ret==200) {
+                            alert("保存成功");
+                        }
+                        else
+                            alert("保存失败");
+                        location.reload();
+                    }
+                );
+            },
+            createServerGroup:function(appName,groupName){
+                this.showCreateModal = true;
+            },
+            modifyServerGroup:function(appName,groupName){
+                for(var i in this.serverGroups){
+                    if(this.serverGroups[i].group_name == groupName){
+                        this.serverGroup = this.serverGroups[i];
+                        this.showModifyModal = true;
+                     }
+
+                }
+            },
+            removeServerGroup:function(appName,groupName){
+                if(groupName=="default"){
+                    alert("默认组不能被删除");
+                    return ;
+                }
+
+
+
+                this.$http.post("/app/removeServerGroup", {'appName': appName,"groupName":groupName}).then(
+                    function (res) {
+                        if (res.status == 200 && res.body.ret==200) {
+                            alert("删除成功");
+                        }
+                        else
+                            alert("删除失败");
+                        location.reload();
+                    }
+                );
+            },
+            loadAppServerGroups:function(appName){
+                var _self = this;
+                this.$http.get("/app/app_server_groups?app_name=" + appName
+                ).then(function (res) {
+                        if (res.status == 200 && res.body.ret==200) {
+                            _self.serverGroups = res.body.serverGroups
+                            for(var i in _self.serverGroups){
+                                var serverGroup = _self.serverGroups[i];
+                                if(i==0){
+                                    serverGroup["tab_class"]="active";
+                                    serverGroup["tabpanel_class"]="tab-pane active";
+                                }
+                                else{
+                                    serverGroup["tab_class"]="";
+                                    serverGroup["tabpanel_class"]="tab-pane";
+                                }
+
+                                serverGroup["href"] = "#group"+i;
+                                serverGroup["id"] = "group"+i;
+                            }
+                        }
+                    }
+                )
+            }
+        }
+        });
+
+    window.onload = function () {
+        v.loadApp('{{cur_app}}');
+        v.loadAppServerGroups('{{cur_app}}');
+    }
+
+
+
+
+
+</script>
+</body>
+</html>

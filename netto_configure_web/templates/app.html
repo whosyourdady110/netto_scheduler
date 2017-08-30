@@ -14,6 +14,19 @@
             crossorigin="anonymous"></script>
     <script src="{{static_url('js/vue.js')}}"></script>
     <script src="{{static_url('js/vue-resource.js')}}"></script>
+    <style>
+    .app-panel-footer {
+            padding: 5px 5px;
+            margin: 5px 10px;
+            border-top: 1px solid #ddd;
+                text-align: right;
+    }
+
+    .app-code{
+    max-height:80px;height:80px;font-size: 90%;color: #c7254e;background:transparent ;border: 0px;padding:2px 0px;
+    }
+
+    </style>
 </head>
 <body>
 <nav class="navbar navbar-default navbar-inverse" role="navigation">
@@ -24,12 +37,19 @@
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav navbar-left">
                 <li><a href="scheduler">调度中心</a></li>
-                <li class="active"><a href="app">应用中心</a></li>
+                <li class="dropdown active"><a class="dropdown-toggle a1"
+                                               data-toggle="dropdown" href="/app/index"> 应用中心 <span class="caret"></span>
+                </a>
+                    <ul class="dropdown-menu">
+                        <li><a onclick="v.createApp()">新建应用</a></li>
+                    </ul>
+                </li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
-                <li class="dropdown"><a class="dropdown-toggle a1"
-                                        data-toggle="dropdown" href="#"> 应用 <span class="caret"></span>
-                </a>
+                <li class="dropdown">
+                    <a class="dropdown-toggle a1"
+                       data-toggle="dropdown" href="#"> 应用 <span class="caret"></span>
+                    </a>
                     <ul class="dropdown-menu">
                         {% for env in environments %}
                         <li><a href="ssafsfdf">{{env.env}}</a></li>
@@ -51,6 +71,203 @@
         </div>
     </div>
 </nav>
+<div class="container" id="app">
 
+    <div class="modal-mask" v-if="showModal" @close="showModal = false">
+        <div class="modal-wrapper">
+            <div class="modal-container">
+
+                <div class="modal-header">
+                    <h1>新建应用</h1>
+                </div>
+
+                <div class="modal-body">
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">应用名称</label>
+                            <div class="col-sm-10">
+                                <input class="form-control" id="appName" placeholder="英文字母/下划线"
+                                       v-model="appParameters.appName"/>
+                            </div>
+
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">描述</label>
+                            <div class="col-sm-10">
+                                <textarea class="form-control" id="description" v-model="appParameters.description"
+                                          placeholder="" type="text" name="description"></textarea>
+                            </div>
+
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">默认服务器列表</label>
+                            <div class="col-sm-10">
+                                <textarea class="form-control" id="defaultServers" rows="10"
+                                          v-model="appParameters.defaultServerGroup"
+                                          placeholder="例: 192.168.2.251:8080 weight=1; 多行表示多个服务器" type="text"
+                                          name="defaultServers"></textarea>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button @click="saveApp" class="btn btn-primary">保存</button>
+                    <button class="btn btn-primary" @click="showModal=false;">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--<div class="panel ">
+        <div class="panel-heading">我的应用</div>
+        <div class="panel-body">
+            <div class="col-md-5" v-for="app in apps">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <button type="button" class="close" ><span aria-hidden="true">×</span></button>
+                        <span><a href="/app/app_detail">[[app.appName]]</a></span>
+
+                    </div>
+                    <div class="panel-body">
+
+                       <h4>[[app.description]]</h4>
+                        <h5>默认服务器组</h5>
+                        <pre  class="app-code">[[app.defaultServerGroup]] </pre>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>-->
+
+   <div class="panel panel-default">
+       <div class="bs-component">
+
+          <table class="table table-striped table-hover data-table ">
+               <thead>
+               <tr>
+                   <th>#</th>
+                   <th>应用名</th>
+                   <th>描述</th>
+                   <th></th>
+
+               </tr>
+               </thead>
+               <tbody>
+               <tr v-for="app in apps">
+                   <td>[[app.id]]</td>
+                   <td>[[app.appName]]</td>
+                   <td>[[app.description]]</td>
+                   <td>
+                       <div class="btn-group  pull-right">
+                           <a href="#" class="btn btn-default btn-xs">操作</a> <a
+                               aria-expanded="true" href="#"
+                               class="btn btn-default btn-xs dropdown-toggle"
+                               data-toggle="dropdown"><span class="caret"></span></a>
+                           <ul class="dropdown-menu">
+                               <li><a @click="modifyApp(app.appName)">修改</a></li>
+                               <li><a   @click="removeApp(app.appName)">删除</a></li>
+                               <li><a v-bind:href="app.editUrl">路由分组</a></li>
+                           </ul>
+                       </div>
+                   </td>
+               </tr>
+
+               </tbody>
+           </table>
+       </div>
+   </div>
+</div>
+
+</div>
+<script type="text/javascript">
+    Vue.component('modal', {
+        template: '#modal-template'
+    })
+
+    var v = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#app',
+        data: {
+            showModal: false,
+            appParameters:{
+                appProtocol:"tcp"
+            },
+            apps:[{}]
+        },
+        methods: {
+            createApp: function () {
+                this.showModal = true;
+
+            }
+            ,
+            saveApp:function(){
+                console.log(this.appParameters);
+                var _self = this;
+
+                this.$http.post("/app/saveApp", {'app': this.appParameters}).then(
+                    function (res) {
+                        if (res.status == 200 && res.body.ret==200) {
+                            alert("保存成功");
+                        }
+                        else
+                            alert("保存失败");
+                        location.reload();
+                    }
+                );
+
+            },
+            removeApp:function(appName){
+                console.log(this.appParameters);
+                var _self = this;
+
+                this.$http.post("/app/removeApp", {'appName': appName}).then(
+                    function (res) {
+                        if (res.status == 200 && res.body.ret==200) {
+                            location.reload();
+                        }
+                        else
+                            alert("删除失败");
+                        _self.showModal = false;
+                    }
+                );
+
+            },
+            modifyApp:function(appName){
+                var _self = this;
+                this.$http.get("/app/app_detail?app_name=" + appName
+                ).then(function (res) {
+                        if (res.status == 200 && res.body.ret==200) {
+                            _self.showModal = true;
+                            _self.appParameters = res.body.app
+                        }
+                    }
+                )
+            },
+            listApp:function(){
+                var _self = this;
+                this.$http.get("/app/app_list?env=" + this.curEnv
+                ).then(function (res) {
+                        if (res.status == 200 && res.body.ret==200) {
+                            _self.apps = res.body.apps;
+                            for(var i in _self.apps){
+                                var app = _self.apps[i];
+                                app["editUrl"] = "/app/edit?app_name="+app["appName"];
+                            }
+                        }
+                    }
+                )
+            }
+        }
+        });
+
+    window.onload = function () {
+        v.listApp();
+    }
+
+
+
+</script>
 </body>
 </html>
