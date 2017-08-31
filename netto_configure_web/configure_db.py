@@ -25,7 +25,7 @@ class ConfigureDb:
             self.create_app(appInfo);
         else:
             self.update_app(appInfo);
-        self.create_server_group(appInfo["appName"],"default",appInfo["defaultServerGroup"],'*');
+        self.create_server_group(appInfo["appName"],"*",appInfo["defaultServerGroup"],'*');
         return {};
 
     def create_server_group(self,appName,groupName,servers,routerKeys):
@@ -75,7 +75,7 @@ class ConfigureDb:
                 result = cursor.fetchall()
                 for app in result:
                     appInfo = {"appName":app["app_name"],"id":app["id"],"description":app["description"],"appProtocol":app["protocol"]};
-                    defaultServerGroup = self.get_app_server_group("default",app["app_name"]);
+                    defaultServerGroup = self.get_app_server_group("*",app["app_name"]);
                     appInfo["defaultServerGroup"] = "\n".join(defaultServerGroup)
                     ret.append(appInfo);
 
@@ -186,7 +186,7 @@ class ConfigureDb:
     def get_app_detail(self,appName):
         app = self.get_app(appName);
         if app is not None:
-            defaultServerGroup = self.get_app_server_group("default",appName);
+            defaultServerGroup = self.get_app_server_group("*",appName);
             app["defaultServerGroup"] = "\n".join(defaultServerGroup)
         return app;
 
