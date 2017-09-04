@@ -11,7 +11,6 @@ TASK_PARAMS = "task_params"
 WAITING_RUN_TASKS = "waiting_run_tasks"
 WAITING_STOP_TASKS = "waiting_stop_tasks"
 TASK_INSTANCES = "task_instances"
-TASK_ENVIRONMENTS = "task_environments"
 
 ### redis indexes
 ENV_PARAM_INDEX = "env_param_index:"
@@ -25,8 +24,8 @@ class SchedulerDb:
     redis db create delete update query
     """
 
-    def __init__(self, ip, port, timeout):
-        self.pool = redis.ConnectionPool(host=ip, port=port, socket_timeout=timeout)
+    def __init__(self, host, port, timeout):
+        self.pool = redis.ConnectionPool(host=host, port=port, socket_timeout=timeout)
 
     def register_invoker(self, invoker_id, max_tasks, live_seconds):
         r = redis.Redis(connection_pool=self.pool)
@@ -163,7 +162,7 @@ class SchedulerDb:
         for b_str in task_instance_ids:
             task_instance_id = b_str.decode()
             if not r.hexists(TASK_INSTANCES, task_instance_id):
-                break
+                continue
             task_instance = TaskInstance.from_json_string(r.hget(TASK_INSTANCES, task_instance_id).decode())
             if lock:
                 self.lock_invoker_instance(invoker_id, task_instance_id)
@@ -224,18 +223,6 @@ class SchedulerDb:
         for b_key in dic1.keys():
             dic2[b_key.decode()] = dic1[b_key].decode()
         return dic2
-
-    def query_all_environments(self):
-        r = redis.Redis(connection_pool=self.pool)
-        dict1 = r.hgetall(TASK_ENVIRONMENTS)
-        environments = []
-        for key in dict1.keys():
-            dict2 = json.loads(dict1[key].decode())
-            owners = dict2['owners']
-            group = dict2['group']
-            app = dict2['app']
-            environments.append(TaskEnvironment(app, owners, group))
-        return environments
 
     def query_tasks_info(self, env):
         '''
@@ -356,7 +343,7 @@ class SchedulerDb:
         for b_str in instance_ids:
             instance_id = b_str.decode()
             if not r.hexists(TASK_INSTANCES, instance_id):
-                break
+                continue
             status, task_instance = self.get_task_instance_status(instance_id)
             if status:
                 self.add_task_waiting_stop(instance_id, task_instance.invoker_id)

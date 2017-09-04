@@ -5,6 +5,7 @@ import configparser
 from netto_scheduler_agent.scripts.schedule_db import SchedulerDb
 from netto_scheduler_agent.scripts.task import TaskParam
 from netto_scheduler_agent.scripts.task import TaskEnvironment
+from netto_configure_web.configure_db import SchedulerConfigureDb
 
 
 class SchedulerHandler(tornado.web.RequestHandler):
@@ -12,10 +13,7 @@ class SchedulerHandler(tornado.web.RequestHandler):
         super().__init__(application, request, **kwargs)
         conf = configparser.ConfigParser()
         conf.read("web.ini")
-        ip = conf.get("redis", "ip")
-        port = conf.getint("redis", "port")
-        timeout = conf.getint("redis", "timeout")
-        self.db = SchedulerDb(ip, port, timeout)
+        self.db = SchedulerConfigureDb(conf)
 
     def get(self):
         args = self.get_query_arguments("a")
