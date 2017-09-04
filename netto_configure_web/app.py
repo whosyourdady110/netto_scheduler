@@ -12,7 +12,7 @@ class AppHandler(tornado.web.RequestHandler):
         super().__init__(application, request, **kwargs)
         conf = configparser.ConfigParser()
         conf.read("web.ini")
-        ip = conf.get("redis", "ip")
+        ip = conf.get("redis", "host")
         port = conf.getint("redis", "port")
         timeout = conf.getint("redis", "timeout")
         self.db = SchedulerDb(ip, port, timeout)
@@ -26,16 +26,17 @@ class AppHandler(tornado.web.RequestHandler):
 
     def get(self, cmd_type):
         title = "netto configure web"
-        environments = self.db.query_all_environments()
-        if len(environments) > 0:
-            cur_env = environments[0]
-        else:
-            cur_env = TaskEnvironment("netto", [])
+        cur_env = TaskEnvironment("netto", [])
+        # environments = self.db.query_all_environments()
+        # if len(environments) > 0:
+        #     cur_env = environments[0]
+        # else:
+        #     cur_env = TaskEnvironment("netto", [])
         if(cmd_type=="index"):
-            self.render("app.html", title=title, environments=environments, cur_env=cur_env )
+            self.render("app.html", title=title, environments=[], cur_env=cur_env )
         if(cmd_type=="edit"):
             appName = self.get_argument('app_name');
-            self.render("app_edit.html", title=title, environments=environments, cur_env=cur_env,cur_app=appName)
+            self.render("app_edit.html", title=title, environments=[], cur_env=cur_env,cur_app=appName)
         elif(cmd_type=="app_list"):
             self.set_header("Content-Type", "application/json");
             self.write(json_encode({"ret":200,"apps":self.configurationDb.list_app()}));
