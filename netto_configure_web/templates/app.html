@@ -36,7 +36,7 @@
         </div>
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav navbar-left">
-                <li><a href="scheduler">调度中心</a></li>
+                <li><a href="/">调度中心</a></li>
                 <li class="dropdown active"><a class="dropdown-toggle a1"
                                                data-toggle="dropdown" href="/app/index"> 应用中心 <span class="caret"></span>
                 </a>
@@ -46,17 +46,17 @@
                 </li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
-                <li class="dropdown">
-                    <a class="dropdown-toggle a1"
-                       data-toggle="dropdown" href="#"> 应用 <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        {% for env in environments %}
-                        <li><a href="ssafsfdf">{{env.env}}</a></li>
-                        {% end %}
-                    </ul>
-                </li>
-                <li><a class="a1" href="#">{{cur_env.env}}</a></li>
+                <!--<li class="dropdown">-->
+                    <!--<a class="dropdown-toggle a1"-->
+                       <!--data-toggle="dropdown" href="#"> 应用 <span class="caret"></span>-->
+                    <!--</a>-->
+                    <!--<ul class="dropdown-menu">-->
+                        <!--{% for env in environments %}-->
+                        <!--<li><a href="ssafsfdf">{{env.env}}</a></li>-->
+                        <!--{% end %}-->
+                    <!--</ul>-->
+                <!--</li>-->
+                <!--<li><a class="a1" href="#">{{cur_env.env}}</a></li>-->
                 <li class="dropdown">
                     <a class="dropdown-toggle a1"
                        data-toggle="dropdown" href="#"> admin <span
@@ -119,28 +119,6 @@
             </div>
         </div>
     </div>
-    <!--<div class="panel ">
-        <div class="panel-heading">我的应用</div>
-        <div class="panel-body">
-            <div class="col-md-5" v-for="app in apps">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <button type="button" class="close" ><span aria-hidden="true">×</span></button>
-                        <span><a href="/app/app_detail">[[app.appName]]</a></span>
-
-                    </div>
-                    <div class="panel-body">
-
-                       <h4>[[app.description]]</h4>
-                        <h5>默认服务器组</h5>
-                        <pre  class="app-code">[[app.defaultServerGroup]] </pre>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>-->
-
    <div class="panel panel-default">
        <div class="bs-component">
 

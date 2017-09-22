@@ -4,16 +4,28 @@
     <meta charset="UTF-8">
     <title>{{title}}</title>
     <link rel="stylesheet" href="{{static_url('css/main.css')}}" type="text/css"/>
-    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script src="{{static_url('js/jquery-2.1.3.min.js')}}"></script>
     <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
-    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css"
-          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}" type="text/css"/>
     <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
-    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"
-            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
-            crossorigin="anonymous"></script>
+    <script src="{{static_url('js/bootstrap.min.js')}}"></script>
     <script src="{{static_url('js/vue.js')}}"></script>
     <script src="{{static_url('js/vue-resource.js')}}"></script>
+    <script src="{{static_url('js/select2.min.js')}}"></script>
+    <link href="{{static_url('css/select2.min.css')}}" rel="stylesheet"/>
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-default/index.css">
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        .el-select,.el-input {
+            width: 150px;
+        }
+        .el-form-item{
+            margin-bottom: 8px
+        }
+    </style>
 </head>
 <body>
 <nav class="navbar navbar-default navbar-inverse" role="navigation">
@@ -30,7 +42,7 @@
                         <li><a onclick="v.createTask()">新建任务</a></li>
                     </ul>
                 </li>
-                <li><a href="app">应用中心</a></li>
+                <li><a href="app/index">应用中心</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li class="dropdown"><a class="dropdown-toggle a1"
@@ -38,11 +50,11 @@
                 </a>
                     <ul class="dropdown-menu">
                         {% for env in environments %}
-                        <li><a href="ssafsfdf">{{env.env}}</a></li>
+                        <li><a href="#" onclick="loadCurEnvTasks('{{env.env}}')">{{env.env}}</a></li>
                         {% end %}
                     </ul>
                 </li>
-                <li><a class="a1" href="#">{{cur_env.env}}</a></li>
+                <li><a class="a1" href="#" id="currentEnv"></a></li>
                 <li class="dropdown">
                     <a class="dropdown-toggle a1"
                        data-toggle="dropdown" href="#"> admin <span
@@ -58,145 +70,121 @@
     </div>
 </nav>
 <div id="app">
-    <div class="modal-mask" v-if="showModal" @close="showModal = false">
-        <div class="modal-wrapper">
-            <div class="modal-container">
+    <el-dialog title="新建修改调度任务" :visible.sync="dialogFormVisible">
+      <el-form :model="form":inline="true" :model="formInline" :label-position="labelPosition">
+        <el-form-item label="应用" :label-width="formLabelWidth" >
+            <el-select id="inputApp" :disabled="selectDisabled" v-model="curTaskParam.app"  @change="initGroupSelect"  filterable placeholder="请选择" size="small">
+                <el-option v-for="item in envApp":key="item" :label="item" :value="item">
+                </el-option>
+            </el-select>
+        </el-form-item>
+        <el-form-item id="inputGroup" label="分组" :label-width="formLabelWidth" >
+            <el-select v-model="curTaskParam.group" :disabled="selectDisabled" filterable placeholder="请选择" size="small">
+                <el-option v-for="item in envGroup" :key="item" :label="item" :value="item">
+                </el-option>
+            </el-select>
+        </el-form-item>
+        <input type="hidden" id="inputId" placeholder="id" v-model="curTaskParam.id"/>
+        <el-form-item label="命令" :label-width="formLabelWidth">
+            <el-input  id="inputCmd" v-model="curTaskParam.cmd" style='width:415px' placeholder="调用服务命令" auto-complete="off" size="small"></el-input>
+        </el-form-item>
+        <div>
+          <el-form-item label="----------调用方参数-----------" label-width="250px">
+          </el-form-item>
+        </div>
+        <el-form-item label="调用方" :label-width="formLabelWidth">
+            <el-input id="inputInvokeCount" v-model="curTaskParam.params.invoke_args.invoke_count" placeholder="调用方的数量" auto-complete="off" size="small"></el-input>
+        </el-form-item>
+        <el-form-item label="cron_express" :label-width="formLabelWidth" >
+            <el-input placeholder="调度表达式" id="inputCronExpress" v-model="curTaskParam.params.invoke_args.cron_express" auto-complete="off" size="small"></el-input>
+        </el-form-item>
+        <el-form-item label="调用间隔" :label-width="formLabelWidth">
+          <el-input id="inputSleepSeconds" placeholder="每次调用服务的间隔" v-model="curTaskParam.params.invoke_args.sleep_seconds" auto-complete="off" size="small"></el-input>
+        </el-form-item>
+        <el-form-item label="超时秒数" :label-width="formLabelWidth" >
+          <el-input id="inputTimeoutSeconds" placeholder="服务超时秒数" v-model="curTaskParam.params.invoke_args.timeout_seconds" auto-complete="off" size="small"></el-input>
+        </el-form-item>
+        <div>
+          <el-form-item label="----------服务方参数-----------" label-width="250px">
+          </el-form-item>
+        </div>
+        <el-form-item label="每次取数" :label-width="formLabelWidth">
+          <el-input id="inputFectchCount" placeholder="服务的每次取数数量" v-model="curTaskParam.params.service_args.fetch_count" auto-complete="off" size="small" style='width:60px'></el-input>
+        </el-form-item>
+        <el-form-item label="重试次数" :label-width="formLabelWidth" >
+          <el-input id="inputRetryCount" placeholder="错误数据的重试次数" v-model="curTaskParam.params.service_args.data_retry_count" auto-complete="off" size="small" style='width:60px'></el-input>
+        </el-form-item>
+        <el-form-item label="重试间隔" :label-width="formLabelWidth" >
+          <el-input id="inputRetrySeconds" placeholder="错误数据的重试间隔秒数" v-model="curTaskParam.params.service_args.retry_after_seconds" auto-complete="off" size="small" style='width:60px'></el-input>
+        </el-form-item>
+        <el-form-item label="每次执行" :label-width="formLabelWidth">
+          <el-input id="inputExecuteCount" placeholder="每次执行数据数量" v-model="curTaskParam.params.service_args.execute_count" auto-complete="off" size="small"></el-input>
+        </el-form-item>
+        <el-form-item label="线程数" :label-width="formLabelWidth" >
+          <el-input id="inputExecuteThreadCount" placeholder="服务执行的线程数量" v-model="curTaskParam.params.service_args.execute_thread_count" auto-complete="off" size="small"></el-input>
+        </el-form-item>
+        <el-form-item label="自定义" :label-width="formLabelWidth">
+            <el-input type="textarea"  id="inputSelfDefined" placeholder="服务的自定义参数" v-model="curTaskParam.params.service_args.self_defined" auto-complete="off" size="small" :rows="3" style='width:415px'></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+            <el-button @click="dialogFormVisible = false">取 消</el-button>
+            <el-button type="primary" @click="saveTask">确 定</el-button>
+      </div>
+    </el-dialog>
+    <div class="container">
+        <div class="panel panel-default">
+           <div class="bs-component">
+                <table class="table table-striped table-hover data-table " style="table-layout:fixed;">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>cmd</th>
+                        <th>参数</th>
+                        <th>任务数</th>
+                        <th>调用时间</th>
+                        <th>成功次数</th>
+                        <th>失败次数</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr v-for="(taskInfo,index) in tasksInfo">
+                        <!--<td style="cursor:pointer" @click="stopTasks(taskInfo.id)">停止[[taskInfo.run_count]]</td>-->
+                        <!--<td style="cursor:pointer" @click="startTasks(taskInfo.id)">开启[[taskInfo.stop_count]]</td>-->
+                        <!--<td v-text="taskInfo.id"></td>-->
+                        <td :text-content.prop="index+1"></td>
+                        <td style="word-break:break-all" v-text="taskInfo.cmd"></td>
+                        <td style="word-break:break-all" v-text="taskInfo.task_args"></td>
+                        <td v-text="taskInfo.task_count"></td>
+                        <td v-text="taskInfo.invoke_type"></td>
+                        <td v-text="taskInfo.success_count"></td>
+                        <td v-text="taskInfo.fail_count"></td>
+                        <td ><label class="label label-success" v-if="taskInfo.status==='on'">启用中</label>
+                             <label class="label label-info" v-else>未启动</label>
+                        </td>
 
-                <div class="modal-header">
-                    新建修改调度任务
-                </div>
-
-                <div class="modal-body">
-                    <form class="form-horizontal">
-                        <div class="form-group">
-                            <label for="inputApp" class="col-sm-2 control-label">应用</label>
-                            <div class="col-sm-4">
-                                <input class="form-control" id="inputApp" placeholder="服务的应用名称"
-                                       v-model="curTaskParam.app"/>
-                            </div>
-                            <label for="inputGroup" class="col-sm-2 control-label">分组</label>
-                            <div class="col-sm-4">
-                                <input class="form-control" id="inputGroup" placeholder="服务的应用分组"
-                                       v-model="curTaskParam.group"/>
-                            </div>
-                            <div class="col-sm-4">
-                                <input type="hidden" class="form-control" id="inputId" placeholder="id"
-                                       v-model="curTaskParam.id"/>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputCmd" class="col-sm-2 control-label">命令</label>
-                            <div class="col-sm-10">
-                                <input class="form-control" id="inputCmd" placeholder="调用服务命令"
-                                       v-model="curTaskParam.cmd"/>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="col-sm-6 control-label">----------调用方参数-----------</label>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputInvokeCount" class="col-sm-2 control-label">调用方</label>
-                            <div class="col-sm-4">
-                                <input class="form-control" id="inputInvokeCount" placeholder="调用方的数量"
-                                       v-model="curTaskParam.params.invoke_args.invoke_count"/>
-                            </div>
-                            <label for="inputCronExpress" class="col-sm-2 control-label">cron_express</label>
-                            <div class="col-sm-4">
-                                <input class="form-control" id="inputCronExpress" placeholder="调度表达式"
-                                       v-model="curTaskParam.params.invoke_args.cron_express"/>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputSleepSeconds" class="col-sm-2 control-label">调用间隔</label>
-                            <div class="col-sm-4">
-                                <input class="form-control" id="inputSleepSeconds" placeholder="每次调用服务的间隔"
-                                       v-model="curTaskParam.params.invoke_args.sleep_seconds"/>
-                            </div>
-                            <label for="inputTimeoutSeconds" class="col-sm-2 control-label">超时秒数</label>
-                            <div class="col-sm-4">
-                                <input class="form-control" id="inputTimeoutSeconds" placeholder="服务超时秒数"
-                                       v-model="curTaskParam.params.invoke_args.timeout_seconds"/>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="col-sm-6 control-label">----------服务方参数-----------</label>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputFectchCount" class="col-sm-2 control-label">每次取数</label>
-                            <div class="col-sm-2">
-                                <input class="form-control" id="inputFectchCount" placeholder="服务的每次取数数量"
-                                       v-model="curTaskParam.params.service_args.fetch_count"/>
-                            </div>
-                            <label for="inputRetryCount" class="col-sm-2 control-label">重试次数</label>
-                            <div class="col-sm-2">
-                                <input class="form-control" id="inputRetryCount" placeholder="错误数据的重试次数"
-                                       v-model="curTaskParam.params.service_args.data_retry_count"/>
-                            </div>
-                            <label for="inputRetrySeconds" class="col-sm-2 control-label">重试间隔</label>
-                            <div class="col-sm-2">
-                                <input class="form-control" id="inputRetrySeconds" placeholder="错误数据的重试间隔秒数"
-                                       v-model="curTaskParam.params.service_args.retry_after_seconds"/>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="inputExecuteCount" class="col-sm-2 control-label">每次执行</label>
-                            <div class="col-sm-4">
-                                <input class="form-control" id="inputExecuteCount" placeholder="每次执行数据数量"
-                                       v-model="curTaskParam.params.service_args.execute_count"/>
-                            </div>
-                            <label for="inputRetrySeconds" class="col-sm-2 control-label">线程数</label>
-                            <div class="col-sm-4">
-                                <input class="form-control" id="inputExecuteThreadCount" placeholder="服务执行的线程数量"
-                                       v-model="curTaskParam.params.service_args.execute_thread_count"/>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="inputSelfDefined" class="col-sm-2 control-label">自定义</label>
-                            <div class="col-sm-10">
-                                <textarea class="form-control" rows="3" id="inputSelfDefined" placeholder="服务的自定义参数"
-                                          v-model="curTaskParam.params.service_args.self_defined"></textarea>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="modal-footer">
-                    <button @click="saveTask">保存</button>
-                    <button @click="showModal=false;">关闭</button>
-                </div>
-            </div>
+                        <td>
+                            <div class="btn-group ">
+                               <a href="#" class="btn btn-default btn-xs">操作</a> <a
+                                   aria-expanded="true" href="#"
+                                   class="btn btn-default btn-xs dropdown-toggle"
+                                   data-toggle="dropdown"><span class="caret"></span></a>
+                               <ul class="dropdown-menu">
+                                   <li><a @click="updateTask(taskInfo.id)">修改</a></li>
+                                   <li><a @click="startTasks(taskInfo.id)">开启</a></li>
+                                   <li><a @click="stopTasks(taskInfo.id)">停止</a></li>
+                               </ul>
+                           </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+           </div>
         </div>
     </div>
-    <table class="table table-hover" style="table-layout:fixed;">
-        <thead>
-        <tr>
-            <th colspan="3" width="80px">操作</th>
-            <th width="120px">id</th>
-            <th width="100px">cmd</th>
-            <th width="180px">参数</th>
-            <th width="30px">任务数</th>
-            <th width="35px">调用时间</th>
-            <th width="35px">成功次数</th>
-            <th width="35px">失败次数</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr v-for="taskInfo in tasksInfo">
-            <td style="cursor:pointer" @click="updateTask(taskInfo.id)">编辑</td>
-            <td style="cursor:pointer" @click="stopTasks(taskInfo.id)">停止[[taskInfo.run_count]]</td>
-            <td style="cursor:pointer" @click="startTasks(taskInfo.id)">开启[[taskInfo.stop_count]]</td>
-            <td v-text="taskInfo.id"></td>
-            <td style="word-break:break-all" v-text="taskInfo.cmd"></td>
-            <td style="word-break:break-all" v-text="taskInfo.task_args"></td>
-            <td v-text="taskInfo.task_count"></td>
-            <td v-text="taskInfo.invoke_type"></td>
-            <td v-text="taskInfo.success_count"></td>
-            <td v-text="taskInfo.fail_count"></td>
-        </tr>
-        </tbody>
-    </table>
+
 </div>
 <script type="text/javascript">
     // register modal component
@@ -206,20 +194,61 @@
     var v = new Vue({
         delimiters: ['[[', ']]'],
         el: '#app',
-        data: {
-            showModal: false,
-            curEnv: "{{cur_env.env}}",
-            curTaskParam: {},
-            tasksInfo: []
+        data:
+        {
+            curEnv: "",
+            curTaskParam: {'app':'','group':'','id':'','params':{'invoke_args':{},'service_args':{}}},
+            tasksInfo: [],
+            dialogTableVisible: false,
+            dialogFormVisible: false,
+            formLabelWidth: '100px',
+            labelPosition: 'right',
+            form:{},
+            visible: false,
+            envData : {},
+            envApp : [],
+            envGroup : [],
+            selectDisabled : false
         },
         methods: {
+            initEnvApp: function(){
+                var _self = this;
+                this.$http.post("/scheduler", {'a': 'allEnv'}
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            _self.envData=res.body;
+                            // 初始化app
+                            for(var da in _self.envData){
+                              if (_self.envApp.indexOf(_self.envData[da].app) <= -1) {
+                                _self.envApp.push(_self.envData[da].app);
+                              }
+                            }
+                        }
+
+                    }
+                )
+            },
+            // 修改group输入框的内容
+            initGroupSelect:function () {
+              this.curTaskParam.group="";
+              this.envGroup = [];
+              for(var da in this.envData){
+                  if (this.envData[da].app == this.curTaskParam.app) {
+                     this.envGroup.push(this.envData[da].group)
+                  }
+              }
+            },
             loadTasks: function () {
                 var _self = this;
                 this.$http.get("/scheduler?a=tasks&env=" + this.curEnv
                 ).then(function (res) {
                         if (res.status == 200) {
+                            _self.tasksInfo = []
                             for (var i in res.body) {
                                 _self.tasksInfo.push(eval("(" + res.body[i] + ")"))
+                            }
+                            if (_self.tasksInfo.length<=0){
+
                             }
                         }
                     }
@@ -230,7 +259,7 @@
                 this.$http.post("/scheduler", {'a': 'ct', 'env': this.curEnv}
                 ).then(function (res) {
                         if (res.status == 200) {
-                            _self.showModal = true;
+                            _self.dialogFormVisible = true;
                             _self.curTaskParam = res.body
                         }
                     }
@@ -241,7 +270,7 @@
                 this.$http.get("/scheduler?a=task&id=" + param_id
                 ).then(function (res) {
                         if (res.status == 200) {
-                            _self.showModal = true;
+                            _self.dialogFormVisible = true;
                             _self.curTaskParam = res.body
                         }
                     }
@@ -252,8 +281,9 @@
                 this.$http.post("/scheduler", {'a': 'stop', 'param_id': param_id}
                 ).then(function (res) {
                         if (res.status == 200) {
-                            alert(res.bodyText)
-                            _self.showModal = false
+                            //alert(res.bodyText)
+                            _self.loadTasks();
+                            _self.dialogFormVisible = false
                         }
 
                     }
@@ -264,8 +294,9 @@
                 this.$http.post("/scheduler", {'a': 'start', 'param_id': param_id}
                 ).then(function (res) {
                         if (res.status == 200) {
-                            alert(res.bodyText)
-                            _self.showModal = false
+                            //alert(res.bodyText)
+                            _self.loadTasks();
+                            _self.dialogFormVisible = false
                         }
 
                     }
@@ -277,11 +308,15 @@
                     return;
                 }
                 var _self = this;
+                this.curEnv = this.curTaskParam.app+'.'+this.curTaskParam.group;
+                this.curTaskParam.env = this.curEnv;
                 this.$http.post("/scheduler", {'a': 'sv', 'task': this.curTaskParam}
                 ).then(function (res) {
                         if (res.status == 200) {
-                            alert(res.bodyText)
-                            _self.showModal = false
+                            //alert(res.bodyText)
+                            loadCurEnvTasks(this.curEnv);
+                            //_self.loadTasks();
+                            _self.dialogFormVisible = false
                         }
 
                     }
@@ -291,8 +326,16 @@
     })
     window.onload = function () {
         v.loadTasks();
+        v.initEnvApp();
     }
-
+    loadCurEnvTasks = function(curEnv){
+        $("#currentEnv").html(curEnv);
+        v.curEnv = curEnv;
+        v.selectDisabled = true;
+        v.loadTasks();
+    }
 </script>
+
+</div>
 </body>
 </html>

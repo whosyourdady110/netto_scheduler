@@ -35,18 +35,22 @@ class SchedulerHandler(tornado.web.RequestHandler):
         else:
             title = "netto configure web"
             environments = self.db.query_all_environments()
-            if len(environments) > 0:
-                cur_env = environments[0]
-            else:
-                cur_env = TaskEnvironment("netto", [])
-            self.render("scheduler.html", title=title, environments=environments, cur_env=cur_env)
+            # if len(environments) > 0:
+            #     cur_env = environments[0]
+            # else:
+            #     cur_env = TaskEnvironment("netto", [])
+            # self.render("scheduler.html", title=title, environments=environments, cur_env=cur_env)
+            self.render("scheduler.html", title=title, environments=environments)
 
     def post(self):
         data = json.loads(self.request.body.decode())
         if data['a'] == 'ct':
             env = data["env"]
-            temps = env.split('.')
-            param = TaskParam(temps[0], "", {}, temps[1])
+            if env != '' and type(env) != 'NoneType':
+                temps = env.split('.')
+                param = TaskParam(temps[0], "", {}, temps[1])
+            else:
+                param = TaskParam("", "", {}, "")
             self.write(param.to_json_string())
         elif data['a'] == 'sv':
             try:
@@ -63,3 +67,10 @@ class SchedulerHandler(tornado.web.RequestHandler):
             param_id = data["param_id"]
             self.db.start_task_param(param_id)
             self.write(json.dumps({'has_err': False}))
+        elif data['a'] == 'allEnv':
+            list = []
+            environments = self.db.query_all_environments()
+            for environment in  environments :
+                list.append(environment.__dict__ )
+            self.write(json.dumps(list))
+

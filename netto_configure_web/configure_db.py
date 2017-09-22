@@ -234,11 +234,13 @@ class SchedulerConfigureDb:
     def query_all_environments(self):
         try:
             cursor = self.conn.cursor()
-            sql = "select s_app,s_group,owners,last_time from system_env"
+            # sql = "select s_app,s_group,owners,last_time from system_env"
+            sql = "select distinct(sg.app_name),sg.group_name,ao.owner,sg.c_t from t_app_server_group sg inner join t_app_owner ao on sg.app_name = ao.app_name"
             cursor.execute(sql)
             environments = []
             for row in cursor.fetchall():
-                env = TaskEnvironment(row[0], json.loads(row[2]), row[1])
+                # env = TaskEnvironment(row[0], json.loads(row[2]), row[1])
+                env = TaskEnvironment(row[0], row[2], row[1])
                 environments.append(env)
             return environments
         finally:

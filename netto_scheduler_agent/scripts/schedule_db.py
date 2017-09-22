@@ -264,7 +264,7 @@ class SchedulerDb:
             task_info = {"id": param.id, 'cmd': param.cmd, "env": param.env,
                          "task_args": param.get_service_args()['self_defined'], 'invoke_type': invoke_type,
                          'task_count': len(instances), 'run_count': run_count,
-                         'stop_count': stop_count,
+                         'stop_count': stop_count,'status': param.status,
                          'success_count': success_count, 'fail_count': fail_count}
             tasks_info.append(task_info)
 

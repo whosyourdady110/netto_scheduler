@@ -89,13 +89,13 @@ class TaskParam:
             return True
         invoke_param1 = self.get_invoke_args()
         invoke_param2 = task_param.get_invoke_args()
-        if invoke_param1['invoke_count'] != invoke_param1['invoke_count']:
+        if invoke_param1['invoke_count'] != invoke_param2['invoke_count']:
             return True
-        if invoke_param1['cron_express'] != invoke_param1['cron_express']:
+        if invoke_param1['cron_express'] != invoke_param2['cron_express']:
             return True
-        if invoke_param1['sleep_seconds'] != invoke_param1['sleep_seconds']:
+        if invoke_param1['sleep_seconds'] != invoke_param2['sleep_seconds']:
             return True
-        if invoke_param1['timeout_seconds'] != invoke_param1['timeout_seconds']:
+        if invoke_param1['timeout_seconds'] != invoke_param2['timeout_seconds']:
             return True
         service_param1 = self.get_service_args()
         service_param2 = task_param.get_service_args()
@@ -117,7 +117,9 @@ class TaskParam:
     def from_json_string(json_string):
         param_dic = json.loads(json_string)
         param_obj = TaskParam(param_dic['app'], param_dic['cmd'], param_dic, param_dic['group'])
+        id = param_obj.id
         param_obj.__dict__ = param_dic
+        param_obj.id = id
         if 'status' not in param_dic.keys():
             param_obj.status = "on"
         return param_obj
