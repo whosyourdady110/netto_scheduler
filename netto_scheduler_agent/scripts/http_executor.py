@@ -51,7 +51,7 @@ class HttpExecutor(TaskExecutor):
             else:
                 service_name = ""
             url = self.task_param.cmd[0:pos]
-            req = {'serviceName': service_name, 'methodName': 'execute',
+            req = {'serviceName': service_name, 'methodName': 'execute','argsLength':2,
                    'args': [{'invokerCount': self.task_param.get_invoke_args()['invoke_count'],
                              'selfDefined': self.task_instance.task_name,
                              'fetchCount': self.task_param.get_service_args()['fetch_count'],
