@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 import tornado.web
 import configparser
 from tornado.escape import json_encode

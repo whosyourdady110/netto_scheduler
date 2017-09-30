@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 import pymysql
 import re;
 import json
