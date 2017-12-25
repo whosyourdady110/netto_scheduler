@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{{static_url('css/main.css')}}" type="text/css"/>
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <script src="{{static_url('js/vue.js')}}"></script>
+    <script src="{{static_url('js/vue-resource.js')}}"></script>
+     <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-default/index.css">
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-default navbar-inverse" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand">Netto Configure Web</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-left">
+                <li><a href="/">首页</a></li>
+                <li><a href="/service">服务</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a class="dropdown-toggle a1" data-toggle="dropdown" href="#">
+                        <span><i class="el-icon-plus"></i></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/app/create">创建应用</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle a1"
+                       data-toggle="dropdown" href="#"> {{username}} <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="javascript:void(0);">修改密码</a></li>
+                        <li><a href="/logout">退出</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container" id="home">
+    <div>首頁</div>
+    <el-row :gutter="20">
+        <el-col :span="16"><div class="grid-content bg-purple"><h2>netto is a very nbility architecture for service register and find </h2></div></el-col>
+        <el-col :span="8"><div class="grid-content bg-purple">
+            <template>
+                <el-table :data="appList" style="width: 100%">
+                    <el-table-column label="你的应用" >
+                        <template scope="scope">
+                            <span>[[ scope.row.appName ]]&nbsp;
+                                  <span v-for="group in scope.row.groups"><a href="#" @click="goToSchedule(scope.row.appName,group)">[[ group ]]</a>&nbsp;&nbsp;</span>
+                            </span>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </template>
+        </div></el-col>
+    </el-row>
+</div>
+<script type="text/javascript">
+    Vue.component('modal', {
+        template: '#modal-template'
+    })
+    var v = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#home',
+        data: {
+            appList: []
+        },
+        methods: {
+            goToSchedule(app,group){
+                env = app+'.'+group
+                window.location.href = '/scheduler?env='+env
+                console.info(app,group);
+            },
+            getApps(){
+                var _self = this;
+                this.$http.post("/", {'cmd_type': 'getAllAppGroup'}
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            _self.appList = res.body.apps;
+                        }
+
+                    }
+                )
+            }
+        }
+    });
+    window.onload = function () {
+        v.getApps();
+    }
+</script>
+</body>
+</html>

@@ -6,9 +6,10 @@ from tornado.escape import json_encode
 from netto_scheduler_agent.scripts.schedule_db import SchedulerDb
 from netto_configure_web.configure_db import ConfigureDb
 from netto_scheduler_agent.scripts.task import TaskEnvironment
+from netto_configure_web.base import BaseHandler
 
 
-class AppHandler(tornado.web.RequestHandler):
+class AppHandler(BaseHandler):
     def __init__(self, application, request, **kwargs):
         super().__init__(application, request, **kwargs)
         conf = configparser.ConfigParser()
@@ -25,6 +26,7 @@ class AppHandler(tornado.web.RequestHandler):
         mysql_db = conf.get("mysql", "db")
         self.configurationDb = ConfigureDb(mysql_host,mysql_port,mysql_user,mysql_passwd,mysql_db)
 
+    @tornado.web.authenticated
     def get(self, cmd_type):
         title = "netto configure web"
         cur_env = TaskEnvironment("netto", [])
@@ -33,8 +35,10 @@ class AppHandler(tornado.web.RequestHandler):
         #     cur_env = environments[0]
         # else:
         #     cur_env = TaskEnvironment("netto", [])
+        if(cmd_type=="create"):
+            self.render("app_create.html", title=title, username=self.current_user)
         if(cmd_type=="index"):
-            self.render("app.html", title=title, environments=[], cur_env=cur_env )
+            self.render("app.html", title=title, environments=[], cur_env=cur_env, username=self.current_user)
         if(cmd_type=="edit"):
             appName = self.get_argument('app_name');
             self.render("app_edit.html", title=title, environments=[], cur_env=cur_env,cur_app=appName)
@@ -58,8 +62,9 @@ class AppHandler(tornado.web.RequestHandler):
         try:
             data = tornado.escape.json_decode(self.request.body)
             if cmd_type == "saveApp":
-                app  = data["app"];
-                self.configurationDb.save_app(app);
+                app = data["app"];
+                #self.configurationDb.save_app(app);
+                self.configurationDb.save_app_default_group(app);
                 self.write({'ret': 200, "cmd_type": cmd_type});
             elif cmd_type == "removeApp":
                 appName = data["appName"];

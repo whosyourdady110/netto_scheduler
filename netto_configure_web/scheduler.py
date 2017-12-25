@@ -7,15 +7,16 @@ from netto_scheduler_agent.scripts.schedule_db import SchedulerDb
 from netto_scheduler_agent.scripts.task import TaskParam
 from netto_scheduler_agent.scripts.task import TaskEnvironment
 from netto_configure_web.configure_db import SchedulerConfigureDb
+from netto_configure_web.base import BaseHandler
 
 
-class SchedulerHandler(tornado.web.RequestHandler):
+class SchedulerHandler(BaseHandler):
     def __init__(self, application, request, **kwargs):
         super().__init__(application, request, **kwargs)
         conf = configparser.ConfigParser()
         conf.read("web.ini")
         self.db = SchedulerConfigureDb(conf)
-
+    @tornado.web.authenticated
     def get(self):
         args = self.get_query_arguments("a")
         if len(args) > 0:
@@ -41,7 +42,8 @@ class SchedulerHandler(tornado.web.RequestHandler):
             # else:
             #     cur_env = TaskEnvironment("netto", [])
             # self.render("scheduler.html", title=title, environments=environments, cur_env=cur_env)
-            self.render("scheduler.html", title=title, environments=environments)
+            cur_env = self.get_argument('env')
+            self.render("scheduler.html", title=title, cur_env=cur_env,username=self.current_user)
 
     def post(self):
         data = json.loads(self.request.body.decode())

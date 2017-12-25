@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{{static_url('css/main.css')}}" type="text/css"/>
+    <script src="{{static_url('js/jquery-2.1.3.min.js')}}"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}" type="text/css"/>
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script src="{{static_url('js/bootstrap.min.js')}}"></script>
+    <script src="{{static_url('js/vue.js')}}"></script>
+    <script src="{{static_url('js/vue-resource.js')}}"></script>
+    <script src="{{static_url('js/select2.min.js')}}"></script>
+    <link href="{{static_url('css/select2.min.css')}}" rel="stylesheet"/>
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-default/index.css">
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-default navbar-inverse" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand">Netto Configure Web</a>
+        </div>
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-left">
+                <li><a href="/">首页</a></li>
+                <li><a href="/service">服务</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a class="dropdown-toggle a1" data-toggle="dropdown" href="#">
+                        <span><i class="el-icon-plus"></i></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/app/create">创建应用</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a class="dropdown-toggle a1"
+                       data-toggle="dropdown" href="#"> {{username}} <span class="caret"></span>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="javascript:void(0);">修改密码</a></li>
+                        <li><a href="/logout">退出</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container" id="router">
+    <el-dialog title="配置路由" :visible.sync="dialogFormVisible">
+      <el-form :model="routerParams">
+        <input type="hidden" id="inputId" placeholder="id" v-model="routerParams.id"/>
+        <el-form-item label="应用" :label-width="formLabelWidth" >
+            <el-input  id="appName" v-model="routerParams.app_name" disabled placeholder="应用" auto-complete="off" size="small"></el-input>
+        </el-form-item>
+        <el-form-item label="目标注册中心" :label-width="formLabelWidth" >
+            <el-input  id="targetRegisterCenter" v-model="routerParams.target_register_center" placeholder="目标注册中心" auto-complete="off" size="small"></el-input>
+        </el-form-item>
+        <el-form-item label="目标服务器分组" :label-width="formLabelWidth">
+            <el-input id="inputInvokeCount" v-model="routerParams.target_server_group" placeholder="目标服务分组" auto-complete="off" size="small"></el-input>
+        </el-form-item>
+        <el-form-item label="路由规则" :label-width="formLabelWidth">
+            <el-input type="textarea"  id="routerExpression" placeholder="路由规则" v-model="routerParams.router_expression" auto-complete="off":rows="3" size="small"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+            <el-button @click="dialogFormVisible = false">取 消</el-button>
+            <el-button type="primary" @click="saveRouter">确 定</el-button>
+      </div>
+    </el-dialog>
+
+    <div><h4>{{cur_env}}</h4></div>
+    <div>
+        <template>
+        <el-tabs v-model="activeName" @tab-click="chageTab">
+        <el-tab-pane label="调度管理" name="scheduler"></el-tab-pane>
+        <el-tab-pane label="服务器分组" name="group"></el-tab-pane>
+        <el-tab-pane label="路由" name="router"></el-tab-pane>
+        <el-tab-pane label="权限管理" name="auth"></el-tab-pane>
+        <el-tab-pane label="应用配置" name="setting"></el-tab-pane>
+        </el-tabs>
+        </template>
+    </div>
+    <div class="el-row">
+        <div class="panel panel-default">
+           <div class="bs-component">
+            <table class="table table-striped table-hover data-table " style="table-layout:fixed;">
+                <thead>
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th>应用</th>
+                    <th>路由规则</th>
+                    <th>目标注册中心</th>
+                    <th>目标服务分组</th>
+                    <th style="width:120px">操作&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<el-button type="success" icon="plus" size="mini" @click="createRouter()">添加</el-button></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="(curRouterInfo,index) in curRouterInfos">
+                    <td :text-content.prop="index+1"></td>
+                    <td style="word-break:break-all" v-text="curRouterInfo.app_name"></td>
+                    <td style="word-break:break-all" v-text="curRouterInfo.router_expression"></td>
+                    <td v-text="curRouterInfo.target_register_center"></td>
+                    <td v-text="curRouterInfo.target_server_group"></td>
+                    <td>
+                        <div class="btn-group ">
+                           <a href="#" class="btn btn-default btn-xs">操作</a> <a
+                               aria-expanded="true" href="#"
+                               class="btn btn-default btn-xs dropdown-toggle"
+                               data-toggle="dropdown"><span class="caret"></span></a>
+                           <ul class="dropdown-menu">
+                               <li><a @click="updateRouter(curRouterInfo.id)">修改</a></li>
+                               <li><a @click="deleteRouter(curRouterInfo.id)">删除</a></li>
+                           </ul>
+                       </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        </div>
+    </div>
+
+</div>
+<script type="text/javascript">
+    Vue.component('modal', {
+        template: '#modal-template'
+    })
+    var v = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#router',
+        data: {
+            dialogFormVisible: false,
+            formLabelWidth: '120px',
+            labelPosition: 'right',
+            activeName: 'router',
+            cur_env:"{{cur_env}}",
+            routerParams:{'id':2,'app_name':'','router_expression':'city>1&&city<=5','target_register_center':'current','target_server_group':'default'},
+            defaultRouterParams:{'id':0,'app_name':'','router_expression':'','target_register_center':'current','target_server_group':'default'},
+            curRouterInfos:[{'id':2,'app_name':'app1','router_expression':'city>1&&city<=5','target_register_center':'current','target_server_group':'default'},
+            {'id':3,'app_name':'app1','router_expression':'city>5&&city<=8','target_register_center':'192.168.2.38:9312','target_server_group':'default'},
+            {'id':4,'app_name':'app1','router_expression':'city>8&&city<=10','target_register_center':'current','target_server_group':'gray'},
+            {'id':5,'app_name':'app1','router_expression':'city>10','target_register_center':'192.168.2.38:9310','target_server_group':'test'}]
+        },
+        methods: {
+            getCurRouterInfo(){
+                var _self = this;
+                this.$http.post("/router", {'cmd_type': 'getInfo', 'env': _self.cur_env}
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            _self.curRouterInfos = res.body.routerInfos
+                        }
+                    }
+                )
+            },
+            createRouter(){
+                var _self = this;
+                _self.defaultRouterParams.app_name=_self.cur_env.split(".")[0]
+                _self.dialogFormVisible = true;
+                _self.routerParams = _self.defaultRouterParams
+            },
+            updateRouter(param_id){
+                var _self = this;
+                this.$http.post("/router", {'cmd_type': 'getRouterParam', 'id': param_id}
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            _self.dialogFormVisible = true;
+                            _self.routerParams = res.body.routerParams
+                        }
+                    }
+                )
+            },
+            deleteRouter(param_id){
+                var _self = this;
+                this.$http.post("/router", {'cmd_type': 'delete', 'id': param_id}
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            _self.$message({
+                                  showClose: true,
+                                  message: '删除成功'
+                                });
+
+                        _self.getCurRouterInfo();
+                        }
+                    }
+                )
+            },
+            saveRouter(){
+                var _self = this;
+                this.$http.post("/router", {'cmd_type': 'save', 'routerParams': this.routerParams}
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            _self.$message({
+                                  showClose: true,
+                                  message: '保存成功'
+                                });
+                            _self.getCurRouterInfo();
+                            _self.dialogFormVisible = false
+                        }
+
+                    }
+                )
+            },
+            chageTab(tab, event) {
+                window.location.href = '/'+tab.name+'?env={{cur_env}}'
+            }
+
+        }
+        });
+
+    window.onload = function () {
+        v.getCurRouterInfo();
+    }
+
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <link rel="stylesheet" href="{{static_url('css/main.css')}}" type="text/css"/>
+    <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+    <link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+    <script src="https://cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <script src="{{static_url('js/vue.js')}}"></script>
+    <script src="{{static_url('js/vue-resource.js')}}"></script>
+
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-default/index.css">
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-default navbar-inverse" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand">Netto Configure Web</a>
+        </div>
+    </div>
+</nav>
+<div class="container" id="login">
+    <el-form ref="user" :model="user" label-width="80px">
+        <el-form-item label="用戶名">
+            <el-input v-model="user.name"></el-input>
+        </el-form-item>
+        <el-form-item label="密碼">
+            <el-input v-model="user.password"></el-input>
+        </el-form-item>
+        <el-form-item>
+            <el-button type="primary" @click="onLogin">登錄</el-button>
+            <el-button>取消</el-button>
+        </el-form-item>
+    </el-form>
+</div>
+<script type="text/javascript">
+    Vue.component('modal', {
+        template: '#modal-template'
+    })
+    var v = new Vue({
+        delimiters: ['[[', ']]'],
+        el: '#login',
+        data: {
+            user:{
+                name:'',
+                password:''
+            }
+        },
+        methods: {
+            onLogin() {
+                var _self = this;
+                this.$http.post("/login", {'user':_self.user}
+                ).then(function (res) {
+                        if (res.status == 200) {
+                            if(res.body.errorCode==0){
+                                this.$message({
+                                    showClose: true,
+                                    message: res.body.message,
+                                    type: 'success'
+                                });
+                                window.location.href = '/'
+                            }else if(res.body.errorCode==1){
+                                this.$message({
+                                    showClose: true,
+                                    message: res.body.message,
+                                    type: 'error'
+                                });
+                            }
+                        }
+                    }
+                )
+            }
+        }
+    });
+</script>
+</body>
+</html>
